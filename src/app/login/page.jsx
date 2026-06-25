@@ -59,7 +59,17 @@ const LoginPage = () => {
 
    
   const handleSignInGoogle = async () => {
-    toast.success('Google SignIn Clicked')
+        try {
+        await authClient.signIn.social({
+          provider: "google",
+        });
+        toast.success("Google Sign...");
+        router.push('/');
+  
+      } catch (error) {
+        console.error("Google Sign In Error:", error);
+        toast.error("Something went wrong with Google Sign In");
+      }
   };
 
   return (

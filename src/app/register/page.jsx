@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -13,8 +12,8 @@ import {
   Label,
   TextField,
 } from "@heroui/react";
-
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Radio, RadioGroup } from "@heroui/react";
+import { Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
@@ -24,8 +23,9 @@ import { useState } from "react";
 const RegisterPage = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-   const onSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const formValues = Object.fromEntries(formData.entries());
@@ -34,20 +34,15 @@ const RegisterPage = () => {
       return toast.error("Please fill in all fields.");
     }
 
-        setIsSubmitting(true);
+    setIsSubmitting(true);
 
     try {
-
       const { data, error } = await authClient.signUp.email({
         email: formValues.email,
         name: formValues.name,
         password: formValues.password,
+        role: formValues.role || "buyer",
         image: formValues.image || "",
-
-        additionalFields: {
-          role: "user",
-          plan: "free",
-        }
       });
 
       if (error) {
@@ -57,18 +52,25 @@ const RegisterPage = () => {
 
       if (data) {
         toast.success("Registration successful!");
-        router.push('/');
+        router.push("/");
       }
     } catch (err) {
       toast.error("Something went wrong. Please try again.");
       setIsSubmitting(false);
     }
-    
   };
 
-  const handleSignUpGoogle = () => {
-    console.log("Google Sign-Up Triggered (Default Config: buyer/active)");
-    toast.success("Google Sign-Up Clicked");
+  const handleSignUpGoogle = async () => {
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+      });
+      toast.success("Redirecting to Google...");
+      router.push("/");
+    } catch (error) {
+      console.error("Google Sign In Error:", error);
+      toast.error("Something went wrong with Google Sign In");
+    }
   };
 
   return (
@@ -89,17 +91,16 @@ const RegisterPage = () => {
           </p>
         </CardHeader>
 
-
         <Form onSubmit={onSubmit} className="flex w-full flex-col gap-5">
+
+          {/* Full Name */}
           <TextField
             isRequired
             name="name"
             type="text"
             className="w-full"
             validate={(value) => {
-              if (value.trim().length < 2) {
-                return "Name must be at least 2 characters long";
-              }
+              if (value.trim().length < 2) return "Name must be at least 2 characters long";
               return null;
             }}
           >
@@ -107,12 +108,13 @@ const RegisterPage = () => {
               Full Name
             </Label>
             <Input
-              placeholder="Masudur Rahman"
+              placeholder="Md. Rakib Hasan"
               className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100"
             />
             <FieldError className="text-xs text-red-500 mt-1" />
           </TextField>
-                    {/* img */}
+
+          {/* Photo URL */}
           <TextField
             name="image"
             type="url"
@@ -123,16 +125,20 @@ const RegisterPage = () => {
               return null;
             }}
           >
-            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">Photo URL <span className="text-gray-400 font-normal">(Optional)</span></Label>
+            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">
+              Photo URL <span className="text-gray-400 font-normal">(Optional)</span>
+            </Label>
             <Input
               placeholder="https://example.com/photo.jpg"
-              className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100" />
-            <Description className="text-xs">Direct image link ending with .jpg, .png, .webp etc.</Description>
-            <FieldError />
+              className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100"
+            />
+            <Description className="text-xs text-zinc-500 mt-1">
+              Direct image link ending with .jpg, .png, .webp etc.
+            </Description>
+            <FieldError className="text-xs text-red-500 mt-1" />
           </TextField>
 
-
-          {/* email */}
+          {/* Email */}
           <TextField
             isRequired
             name="email"
@@ -155,50 +161,77 @@ const RegisterPage = () => {
             <FieldError className="text-xs text-red-500 mt-1" />
           </TextField>
 
-          {/* pass */}
+          {/* Password */}
           <TextField
             isRequired
-            minLength={6}
             name="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             className="w-full"
             validate={(value) => {
-              if (value.length < 6) {
-                return "Password must be at least 6 characters";
-              }
-              if (!/[A-Z]/.test(value)) {
-                return "Password must contain at least one uppercase letter";
-              }
-              if (!/[0-9]/.test(value)) {
-                return "Password must contain at least one number";
-              }
+              if (value.length < 6) return "Password must be at least 6 characters";
+              if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
+              if (!/[0-9]/.test(value)) return "Password must contain at least one number";
               return null;
             }}
           >
             <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">
               Password
             </Label>
-            <Input
-              placeholder="••••••••"
-              className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100"
-            />
+            <div className="relative">
+              <Input
+                placeholder="••••••••"
+                className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100 pr-10 w-full"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <Description className="text-[11px] text-zinc-500 mt-1">
               Must be at least 6 characters with 1 uppercase and 1 number
             </Description>
             <FieldError className="text-xs text-red-500 mt-1" />
           </TextField>
 
-          {/* btn */}
+          {/* Role Select */}
+          <div className="flex flex-col gap-2">
+            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              I want to
+            </Label>
+            <RadioGroup defaultValue="buyer" name="role" orientation="horizontal">
+              <Radio value="buyer">
+                <Radio.Content className="flex text-xs font-medium text-zinc-400">
+                  <Radio.Control>
+                    <Radio.Indicator />
+                  </Radio.Control>
+                  Buy Products
+                </Radio.Content>
+              </Radio>
+              <Radio value="seller">
+                <Radio.Content className="flex text-xs font-medium text-zinc-400">
+                  <Radio.Control>
+                    <Radio.Indicator />
+                  </Radio.Control>
+                  Sell Products
+                </Radio.Content>
+              </Radio>
+            </RadioGroup>
+          </div>
+
+          {/* Submit Button */}
           <Button
             type="submit"
-              isDisabled={isSubmitting}
+            isDisabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2 py-6 bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-purple-500/10 text-sm group mt-2"
           >
             {isSubmitting ? (
-              <span>Submitting...</span>
+              <span>Creating Account...</span>
             ) : (
               <>
-                <span>Submit</span>
+                <span>Create Account</span>
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </>
             )}
@@ -215,8 +248,7 @@ const RegisterPage = () => {
           </div>
         </div>
 
-
-        {/* google */}
+        {/* Google */}
         <Button
           onClick={handleSignUpGoogle}
           className="w-full py-6 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white rounded-xl transition-all flex items-center justify-center gap-2"
@@ -224,11 +256,11 @@ const RegisterPage = () => {
           <FcGoogle className="text-lg" /> Continue with Google
         </Button>
 
-        {/* link*/}
+        {/* Login Link */}
         <p className="text-center text-sm text-zinc-500 mt-6">
           Already have an account?{" "}
           <Link
-            href={"/login"}
+            href="/login"
             className="text-purple-400 hover:text-purple-300 font-medium underline decoration-purple-500/30"
           >
             Sign In

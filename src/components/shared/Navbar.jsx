@@ -2,31 +2,32 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Recycle, ChevronDown, LayoutDashboard, User, LogOut } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
- const SpinnerUI = () => (
-    <div className="flex items-center gap-2 text-zinc-400 text-sm">
-      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-      </svg>
-      Loading...
-    </div>
-  );
-  const AvatarUI = ({ user, size = "sm" }) => {
-  const dimension = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-sm";
 
+const SpinnerUI = () => (
+  <div className="flex items-center gap-2 text-zinc-400 text-sm">
+    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+    </svg>
+    Loading...
+  </div>
+);
+
+const AvatarUI = ({ user, size = "sm" }) => {
+  const dimension = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-sm";
   return user?.image ? (
     <img
       src={user.image}
       alt={user.name}
-      className={`${dimension} rounded-full`}
+      className={`${dimension} rounded-full border border-zinc-700 object-cover`}
     />
   ) : (
-    <div className={`${dimension} rounded-full`}>
+    <div className={`${dimension} rounded-full border border-zinc-700 bg-purple-600 flex items-center justify-center font-semibold text-white`}>
       {user?.name?.charAt(0)}
     </div>
   );
@@ -36,16 +37,25 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const profileRef = useRef(null);
 
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
 
+  const dashboardLinks = {
+    buyer: "/dashboard/buyer",
+    seller: "/dashboard/seller",
+    admin: "/dashboard/admin",
+  };
+
+  const dashboardHref = dashboardLinks[user?.role] || "/dashboard/buyer";
+
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Products", href: "/products" },
     { name: "Categories", href: "/categories" },
-    { name: "Dashboard", href: "/dashboard" },
+    { name: "Dashboard", href: dashboardHref },
   ];
 
   const isActive = (path) => pathname === path;
@@ -66,14 +76,11 @@ export default function Navbar() {
       toast.success("Logged out successfully");
       setIsProfileOpen(false);
       setIsOpen(false);
+      router.push("/");
     } catch (error) {
       toast.error("Failed to log out");
     }
   };
-
- 
-
- 
 
   return (
     <nav className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-md border-b border-zinc-800 text-zinc-100">
@@ -113,9 +120,16 @@ export default function Navbar() {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-900 transition-colors"
                 >
-                  
-                  <AvatarUI user={user} size="md" />
-                  <span className="text-sm font-medium text-zinc-200">{user.name}</span>
+                  <AvatarUI user={user} size="sm" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-semibold text-zinc-200">{user.name}</span>
+                    <span className={`text-[10px] font-medium capitalize ${
+                      user?.role === "admin" ? "text-amber-400" :
+                      user?.role === "seller" ? "text-emerald-400" : "text-rose-400"
+                    }`}>
+                      {user?.role}
+                    </span>
+                  </div>
                   <ChevronDown
                     className={`h-4 w-4 text-zinc-400 transition-transform ${
                       isProfileOpen ? "rotate-180" : ""
@@ -137,7 +151,7 @@ export default function Navbar() {
                       </div>
                       <div className="py-1">
                         <Link
-                          href="/dashboard"
+                          href={dashboardHref}
                           onClick={() => setIsProfileOpen(false)}
                           className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors"
                         >
@@ -145,7 +159,7 @@ export default function Navbar() {
                           Dashboard
                         </Link>
                         <Link
-                          href="/dashboard/profile"
+                          href={`${dashboardHref}/profile`}
                           onClick={() => setIsProfileOpen(false)}
                           className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors"
                         >
@@ -238,22 +252,29 @@ export default function Navbar() {
                 </div>
               ) : user ? (
                 <div className="space-y-3 pt-2 px-3">
+                  {/* User Info Card */}
                   <div className="flex items-center gap-3 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/60">
-                    <AvatarUI size="md" />
+                    <AvatarUI user={user} size="md" />
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-medium text-zinc-200 truncate">{user.name}</span>
                       <span className="text-xs text-zinc-500 truncate">{user.email}</span>
+                      <span className={`text-[10px] font-medium capitalize ${
+                        user?.role === "admin" ? "text-amber-400" :
+                        user?.role === "seller" ? "text-emerald-400" : "text-rose-400"
+                      }`}>
+                        {user?.role}
+                      </span>
                     </div>
                   </div>
                   <Link
-                    href="/dashboard"
+                    href={dashboardHref}
                     onClick={() => setIsOpen(false)}
                     className="block px-0 py-2 text-sm font-medium text-zinc-300 hover:text-white"
                   >
                     Dashboard
                   </Link>
                   <Link
-                    href="/dashboard/profile"
+                    href={`${dashboardHref}/profile`}
                     onClick={() => setIsOpen(false)}
                     className="block px-0 py-2 text-sm font-medium text-zinc-300 hover:text-white"
                   >
