@@ -5,6 +5,32 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Recycle, ChevronDown, LayoutDashboard, User, LogOut } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+ const SpinnerUI = () => (
+    <div className="flex items-center gap-2 text-zinc-400 text-sm">
+      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+      </svg>
+      Loading...
+    </div>
+  );
+  const AvatarUI = ({ user, size = "sm" }) => {
+  const dimension = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-sm";
+
+  return user?.image ? (
+    <img
+      src={user.image}
+      alt={user.name}
+      className={`${dimension} rounded-full`}
+    />
+  ) : (
+    <div className={`${dimension} rounded-full`}>
+      {user?.name?.charAt(0)}
+    </div>
+  );
+};
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,14 +38,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const profileRef = useRef(null);
 
-  // TODO (Phase 2): replace this mock state with real Better Auth session,
-  // e.g. const { user, isLoggedIn, logout } = useSession();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const user = {
-    name: "Rakib Hasan",
-    photo: "https://i.pravatar.cc/150?img=1",
-    role: "buyer",
-  };
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -30,7 +50,6 @@ export default function Navbar() {
 
   const isActive = (path) => pathname === path;
 
-  // close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -41,18 +60,27 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // TODO (Phase 2): replace with real logout call (Better Auth signOut)
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setIsProfileOpen(false);
+  const handleLogout = async () => {
+    try {
+      await authClient.signOut();
+      toast.success("Logged out successfully");
+      setIsProfileOpen(false);
+      setIsOpen(false);
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
   };
+
+ 
+
+ 
 
   return (
     <nav className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-md border-b border-zinc-800 text-zinc-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          
-          {/* Logo Section */}
+
+          {/* Logo */}
           <div className="shrink-0">
             <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-600">
               <Recycle className="h-6 w-6 text-purple-400" />
@@ -60,7 +88,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
@@ -75,19 +103,18 @@ export default function Navbar() {
             ))}
           </div>
 
-          
+          {/* Desktop Auth */}
           <div className="hidden md:flex items-center space-x-4">
-            {isLoggedIn ? (
+            {isPending ? (
+              <SpinnerUI />
+            ) : user ? (
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-900 transition-colors"
                 >
-                  <img
-                    src={user.photo}
-                    alt={user.name}
-                    className="h-8 w-8 rounded-full border border-zinc-700 object-cover"
-                  />
+                  
+                  <AvatarUI user={user} size="md" />
                   <span className="text-sm font-medium text-zinc-200">{user.name}</span>
                   <ChevronDown
                     className={`h-4 w-4 text-zinc-400 transition-transform ${
@@ -106,7 +133,7 @@ export default function Navbar() {
                     >
                       <div className="px-4 py-3 border-b border-zinc-800">
                         <p className="text-sm font-medium text-zinc-100">{user.name}</p>
-                        <p className="text-xs text-zinc-500 capitalize">{user.role}</p>
+                        <p className="text-xs text-zinc-500 truncate">{user.email}</p>
                       </div>
                       <div className="py-1">
                         <Link
@@ -143,7 +170,9 @@ export default function Navbar() {
               <div className="flex items-center space-x-3">
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-zinc-400 hover:text-white px-3 py-2 transition-colors"
+                  className={`text-sm font-medium transition-colors hover:text-purple-400 ${
+                    isActive("/login") ? "text-purple-400 font-semibold" : "text-zinc-400"
+                  }`}
                 >
                   Login
                 </Link>
@@ -157,19 +186,28 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Menu Mobile */}
-          <div className="md:hidden flex items-center">
+          {/* Mobile Toggle */}
+          <div className="md:hidden flex items-center gap-3">
+            {isPending ? (
+              <svg className="animate-spin h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+            ) : user ? (
+              <AvatarUI user={user} size="md" />
+            ) : null}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-zinc-400 hover:text-white focus:outline-none"
+              className="text-zinc-400 hover:text-white focus:outline-none p-1 rounded-lg hover:bg-zinc-900 transition-colors"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
+
         </div>
       </div>
 
-      {/* Mobile Menu Options */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -191,20 +229,20 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              
+
               <hr className="border-zinc-800 my-2" />
 
-              {isLoggedIn ? (
-                <div className="space-y-1 pt-2 px-3">
-                  <div className="flex items-center gap-3 pb-3">
-                    <img
-                      src={user.photo}
-                      alt={user.name}
-                      className="h-9 w-9 rounded-full border border-zinc-700 object-cover"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-100">{user.name}</p>
-                      <p className="text-xs text-zinc-500 capitalize">{user.role}</p>
+              {isPending ? (
+                <div className="flex justify-center py-3">
+                  <SpinnerUI />
+                </div>
+              ) : user ? (
+                <div className="space-y-3 pt-2 px-3">
+                  <div className="flex items-center gap-3 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/60">
+                    <AvatarUI size="md" />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-zinc-200 truncate">{user.name}</span>
+                      <span className="text-xs text-zinc-500 truncate">{user.email}</span>
                     </div>
                   </div>
                   <Link
@@ -222,12 +260,10 @@ export default function Navbar() {
                     Profile Settings
                   </Link>
                   <button
-                    onClick={() => {
-                      handleLogout();
-                      setIsOpen(false);
-                    }}
-                    className="block w-full text-left px-0 py-2 text-sm font-medium text-red-400"
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full text-left px-0 py-2 text-sm font-medium text-red-400"
                   >
+                    <LogOut className="h-4 w-4" />
                     Logout
                   </button>
                 </div>
@@ -236,7 +272,9 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     onClick={() => setIsOpen(false)}
-                    className="block w-full text-center text-zinc-400 hover:text-white py-2 font-medium"
+                    className={`block w-full text-center py-2 font-medium transition-colors hover:text-white ${
+                      isActive("/login") ? "text-purple-400" : "text-zinc-400"
+                    }`}
                   >
                     Login
                   </Link>

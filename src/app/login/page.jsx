@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,12 +17,14 @@ import {
 import { Sparkles, ArrowRight } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 const LoginPage = () => {
   const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const user = Object.fromEntries(formData.entries());
@@ -30,15 +32,34 @@ const LoginPage = () => {
     if (!user.email || !user.password) {
       return toast.error("Please fill in all fields.");
     }
+  
+     try {
+      setIsLoading(true);
+      const { data, error } = await authClient.signIn.email({
+        email: user.email,
+        password: user.password,
+      });
 
-    console.log("From Login Form Submit:", user);
-    toast.success("Form submitted! Check console log.");
+      if (error) {
+        toast.error(error.message || "Invalid email or password");
+        return;
+      }
+
+      toast.success("Welcome back!");
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+   
   };
 
-
-  const handleSignInGoogle = () => {
-    console.log("Google Sign-In Triggered");
-    toast.success("Google Sign-In Clicked");
+   
+  const handleSignInGoogle = async () => {
+    toast.success('Google SignIn Clicked')
   };
 
   return (
@@ -119,10 +140,16 @@ const LoginPage = () => {
 
           <Button
             type="submit"
+             isLoading={isLoading}
+            disabled={isLoading}
             className="w-full flex items-center justify-center gap-2 py-6 bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-purple-500/10 text-sm group mt-2"
           >
-            <span>Sign In</span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+           {!isLoading && (
+              <>
+                <span>Sign In</span>
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+              </>
+            )}
           </Button>
         </Form>
 
@@ -139,6 +166,7 @@ const LoginPage = () => {
         {/* Google*/}
         <Button
           onClick={handleSignInGoogle}
+           disabled={isLoading}
           className="w-full py-6 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white rounded-xl transition-all flex items-center justify-center gap-2"
         >
           <FcGoogle className="text-lg" /> Continue with Google
