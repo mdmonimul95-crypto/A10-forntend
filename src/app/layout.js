@@ -19,6 +19,7 @@ export const metadata = {
   title: "ReSell Hub",
   description:
     "A trusted second-hand marketplace to buy and sell pre-owned products safely — reduce waste, save money, and find quality items near you.",
+  icons: "/logo.png",
 };
 
 export default function RootLayout({ children }) {
