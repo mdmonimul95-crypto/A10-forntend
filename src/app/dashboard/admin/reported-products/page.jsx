@@ -1,35 +1,81 @@
 "use client";
 
-import React, { useState } from "react";
-import { AlertTriangle, Calendar, Eye, CheckCircle2, UserX, Trash2, User } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { AlertTriangle, Calendar, Eye, CheckCircle2, UserX, Trash2, User, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const initialReportedProducts = [
-  {
-    id: "1",
-    reason: "MISLEADING",
-    reportedDate: "20/06/2026",
-    productTitle: "iPhone 12, 128GB, Blue (Bulk Lot - Contact for Wholesale)",
-    reportDetails: "Listing claims 'like new' condition but photos show visible scratches and a cracked back panel.",
-    reportedBy: "Rakib Hasan (rakib.hasan@gmail.com)",
-    sellerName: "Robert Torres",
-    status: "PENDING",
-  }
-];
-
 export default function ReportedProductsAdminPage() {
-  const [reports, setReports] = useState(initialReportedProducts);
+  const [reports, setReports] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAction = (actionType, reportId) => {
-    if (actionType === "dismiss" || actionType === "remove" || actionType === "warn") {
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === reportId ? { ...r, status: "RESOLVED" } : r
-        )
-      );
+  const fetchReports = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports`);
+      const data = await res.json();
+      setReports(data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load reports.");
+    } finally {
+      setIsLoading(false);
     }
-    toast.success(`Action: ${actionType} applied to Report ID: ${reportId}`);
   };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const updateReportStatus = async (reportId, newStatus) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${reportId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update report");
+
+      setReports((prev) =>
+        prev.map((r) => (r._id === reportId ? { ...r, status: newStatus } : r))
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update report status.");
+    }
+  };
+
+  const handleAction = async (actionType, report) => {
+    if (actionType === "inspect") {
+      toast.info(`Viewing product ${report.productId} (details page coming soon).`);
+      return;
+    }
+
+    if (actionType === "remove") {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${report.productId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to delete product");
+        toast.success("Product removed from marketplace.");
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to remove product.");
+        return;
+      }
+    }
+
+    // dismiss, warn, and remove all mark the report as resolved
+    await updateReportStatus(report._id, "resolved");
+    toast.success(`Action: ${actionType} applied successfully.`);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen flex items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-purple-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen">
@@ -52,7 +98,7 @@ export default function ReportedProductsAdminPage() {
         ) : (
           reports.map((report) => (
             <div 
-              key={report.id}
+              key={report._id}
               className="w-full bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 backdrop-blur-xs shadow-xl flex flex-col gap-4"
             >
               {/* Top Meta: Reason Badge, Status Badge & Date */}
@@ -62,8 +108,8 @@ export default function ReportedProductsAdminPage() {
                     <AlertTriangle className="size-3.5" />
                     REASON: {report.reason}
                   </span>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wider border ${
-                    report.status === "RESOLVED"
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wider border capitalize ${
+                    report.status === "resolved"
                       ? "bg-emerald-950/40 text-emerald-400 border-emerald-900/40"
                       : "bg-amber-950/30 text-amber-400 border-amber-900/40"
                   }`}>
@@ -72,7 +118,9 @@ export default function ReportedProductsAdminPage() {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium">
                   <Calendar className="size-4 shrink-0" />
-                  <span>Reported on {report.reportedDate}</span>
+                  <span>
+                    Reported on {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : "—"}
+                  </span>
                 </div>
               </div>
 
@@ -97,14 +145,14 @@ export default function ReportedProductsAdminPage() {
                 {/* Reported By Info */}
                 <div className="flex items-center gap-2 text-xs text-zinc-500 font-medium">
                   <User className="size-4 text-zinc-600 shrink-0" />
-                  <span>Reported by: <span className="text-zinc-400 font-semibold">{report.reportedBy}</span></span>
+                  <span>Reported by: <span className="text-zinc-400 font-semibold">{report.reportedByEmail}</span></span>
                 </div>
 
                 {/* Action Buttons Group */}
                 <div className="flex items-center flex-wrap gap-2">
                   {/* Inspect Button */}
                   <button
-                    onClick={() => handleAction("inspect", report.id)}
+                    onClick={() => handleAction("inspect", report)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-zinc-600 transition-all cursor-pointer"
                   >
                     <Eye className="size-4 text-zinc-400" />
@@ -113,8 +161,8 @@ export default function ReportedProductsAdminPage() {
 
                   {/* Dismiss Button */}
                   <button
-                    onClick={() => handleAction("dismiss", report.id)}
-                    disabled={report.status === "RESOLVED"}
+                    onClick={() => handleAction("dismiss", report)}
+                    disabled={report.status === "resolved"}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-950/20 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-950/20 disabled:hover:text-emerald-400"
                   >
                     <CheckCircle2 className="size-4" />
@@ -123,8 +171,8 @@ export default function ReportedProductsAdminPage() {
 
                   {/* Warn Seller Button */}
                   <button
-                    onClick={() => handleAction("warn", report.id)}
-                    disabled={report.status === "RESOLVED"}
+                    onClick={() => handleAction("warn", report)}
+                    disabled={report.status === "resolved"}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-950/20 border border-amber-900/30 text-amber-500 hover:bg-amber-600 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amber-950/20 disabled:hover:text-amber-500"
                   >
                     <UserX className="size-4" />
@@ -133,8 +181,8 @@ export default function ReportedProductsAdminPage() {
 
                   {/* Remove Product Button */}
                   <button
-                    onClick={() => handleAction("remove", report.id)}
-                    disabled={report.status === "RESOLVED"}
+                    onClick={() => handleAction("remove", report)}
+                    disabled={report.status === "resolved"}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-red-950/30 border border-red-900/50 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-950/30 disabled:hover:text-red-400"
                   >
                     <Trash2 className="size-4" />
