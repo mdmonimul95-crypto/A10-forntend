@@ -28,11 +28,11 @@ export function DashboardSidebar() {
 
   const adminNavLinks = [
     { icon: LayoutDashboard, href: "/dashboard/admin", label: "Overview" },
-    { icon: Users, href: "/dashboard/admin/users", label: "Manage Users" },
-    { icon: Package, href: "/dashboard/admin/products", label: "Manage Products" },
+    { icon: Users, href: "/dashboard/admin/all-user", label: "Manage Users" },
+    { icon: Package, href: "/dashboard/admin/all-products", label: "Manage Products" },
     { icon: Flag, href: "/dashboard/admin/reported-products", label: "Reported Products" },
     { icon: ListOrdered, href: "/dashboard/admin/manage-orders", label: "Manage Orders" },
-    { icon: CreditCard, href: "/dashboard/admin/payments", label: "All Payments" },
+    { icon: CreditCard, href: "/dashboard/admin/all-payments", label: "All Payments" },
     { icon: BarChart2, href: "/dashboard/admin/analytics", label: "Platform Analytics" },
   ];
 
