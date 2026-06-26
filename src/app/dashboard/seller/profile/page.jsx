@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Camera, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { useEffect } from "react";
 
 export default function SellerProfileSettingsPage() {
   const { data: session, isPending } = authClient.useSession();
@@ -17,16 +18,16 @@ export default function SellerProfileSettingsPage() {
   });
 
   // Sync form once session loads
-  React.useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        phone: user.phone || "",
-        location: user.location || "",
-        bio: user.bio || "",
-      });
-    }
-  }, [user]);
+ useEffect(() => {
+  if (user) {
+    setFormData({
+      name: user.name || "",
+      phone: user.phone || "",
+      location: user.location || "",
+      bio: user.bio || "",
+    });
+  }
+}, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
