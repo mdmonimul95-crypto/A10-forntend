@@ -5,15 +5,13 @@ import {
   Button,
   Card,
   CardHeader,
-  Description,
   FieldError,
   Form,
   Input,
   Label,
   TextField,
 } from "@heroui/react";
-import { Radio, RadioGroup } from "@heroui/react";
-import { Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Recycle, ArrowRight, Eye, EyeOff, ShoppingBag, Store } from "lucide-react";
 import { toast } from "sonner";
 import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
@@ -24,14 +22,22 @@ const RegisterPage = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [role, setRole] = useState("buyer");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password, setPassword] = useState("");
 
   const onSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const formValues = Object.fromEntries(formData.entries());
 
-    if (!formValues.name || !formValues.email || !formValues.password) {
-      return toast.error("Please fill in all fields.");
+    if (!formValues.name || !formValues.email || !password) {
+      return toast.error("Please fill in all required fields.");
+    }
+
+    if (password !== confirmPassword) {
+      return toast.error("Passwords do not match.");
     }
 
     setIsSubmitting(true);
@@ -40,9 +46,10 @@ const RegisterPage = () => {
       const { data, error } = await authClient.signUp.email({
         email: formValues.email,
         name: formValues.name,
-        password: formValues.password,
-        role: formValues.role || "buyer",
-        image: formValues.image || "",
+        password: password,
+        role: role,
+        phone: formValues.phone || "",
+        location: formValues.location || "",
       });
 
       if (error) {
@@ -62,10 +69,7 @@ const RegisterPage = () => {
 
   const handleSignUpGoogle = async () => {
     try {
-      await authClient.signIn.social({
-        provider: "google",
-      });
-      toast.success("Redirecting to Google...");
+      await authClient.signIn.social({ provider: "google" });
       router.push("/");
     } catch (error) {
       console.error("Google Sign In Error:", error);
@@ -79,64 +83,94 @@ const RegisterPage = () => {
 
       <Card className="max-w-md w-full bg-zinc-950 p-6 rounded-2xl border border-zinc-900 shadow-xl z-10 text-zinc-100">
 
+        {/* Header */}
         <CardHeader className="flex flex-col items-center gap-2 text-center pb-6">
           <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/20 mb-1">
-            <Sparkles className="h-6 w-6 text-purple-400" />
+            <Recycle className="h-6 w-6 text-purple-400" />
           </div>
           <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
             Create Account
           </h2>
-          <p className="text-sm text-zinc-400">
-            Join ReSell Hub and start buying or selling pre-owned products
+          <p className="text-sm text-purple-400">
+            Join thousands of buyers and sellers
           </p>
         </CardHeader>
 
         <Form onSubmit={onSubmit} className="flex w-full flex-col gap-5">
 
-          {/* Full Name */}
-          <TextField
-            isRequired
-            name="name"
-            type="text"
-            className="w-full"
-            validate={(value) => {
-              if (value.trim().length < 2) return "Name must be at least 2 characters long";
-              return null;
-            }}
-          >
-            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">
-              Full Name
-            </Label>
-            <Input
-              placeholder="Md. Rakib Hasan"
-              className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100"
-            />
-            <FieldError className="text-xs text-red-500 mt-1" />
-          </TextField>
+          {/* Role Select — Card Style */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              I want to
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setRole("buyer")}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  role === "buyer"
+                    ? "border-purple-500 bg-purple-500/10 text-purple-400"
+                    : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+                }`}
+              >
+                <ShoppingBag className="size-6" />
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold">Buyer</span>
+                  <span className="text-[11px] text-zinc-500">Browse & buy</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("seller")}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  role === "seller"
+                    ? "border-purple-500 bg-purple-500/10 text-purple-400"
+                    : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+                }`}
+              >
+                <Store className="size-6" />
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold">Seller</span>
+                  <span className="text-[11px] text-zinc-500">List & sell</span>
+                </div>
+              </button>
+            </div>
+          </div>
 
-          {/* Photo URL */}
-          <TextField
-            name="image"
-            type="url"
-            validate={(value) => {
-              if (value && !/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)$/i.test(value)) {
-                return "Please enter a valid image URL (.jpg, .png, .webp)";
-              }
-              return null;
-            }}
-          >
-            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">
-              Photo URL <span className="text-gray-400 font-normal">(Optional)</span>
-            </Label>
-            <Input
-              placeholder="https://example.com/photo.jpg"
-              className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100"
-            />
-            <Description className="text-xs text-zinc-500 mt-1">
-              Direct image link ending with .jpg, .png, .webp etc.
-            </Description>
-            <FieldError className="text-xs text-red-500 mt-1" />
-          </TextField>
+          {/* Full Name & Phone */}
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              isRequired
+              name="name"
+              type="text"
+              className="w-full"
+              validate={(value) => {
+                if (value.trim().length < 2) return "Min 2 characters";
+                return null;
+              }}
+            >
+              <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="John Doe"
+                className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100"
+              />
+              <FieldError className="text-xs text-red-500 mt-1" />
+            </TextField>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">
+                Phone
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="+1 555 0100"
+                className="w-full bg-zinc-900/50 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+              />
+            </div>
+          </div>
 
           {/* Email */}
           <TextField
@@ -152,76 +186,79 @@ const RegisterPage = () => {
             }}
           >
             <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">
-              Email Address
+              Email <span className="text-red-500">*</span>
             </Label>
             <Input
-              placeholder="name@example.com"
+              placeholder="you@example.com"
               className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100"
             />
             <FieldError className="text-xs text-red-500 mt-1" />
           </TextField>
 
-          {/* Password */}
-          <TextField
-            isRequired
-            name="password"
-            type={showPassword ? "text" : "password"}
-            className="w-full"
-            validate={(value) => {
-              if (value.length < 6) return "Password must be at least 6 characters";
-              if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
-              if (!/[0-9]/.test(value)) return "Password must contain at least one number";
-              return null;
-            }}
-          >
-            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block mb-1">
-              Password
-            </Label>
-            <div className="relative">
-              <Input
-                placeholder="••••••••"
-                className="bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100 pr-10 w-full"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            <Description className="text-[11px] text-zinc-500 mt-1">
-              Must be at least 6 characters with 1 uppercase and 1 number
-            </Description>
-            <FieldError className="text-xs text-red-500 mt-1" />
-          </TextField>
-
-          {/* Role Select */}
+          {/* Location */}
           <div className="flex flex-col gap-2">
-            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-              I want to
-            </Label>
-            <RadioGroup defaultValue="buyer" name="role" orientation="horizontal">
-              <Radio value="buyer">
-                <Radio.Content className="flex text-xs font-medium text-zinc-400">
-                  <Radio.Control>
-                    <Radio.Indicator />
-                  </Radio.Control>
-                  Buy Products
-                </Radio.Content>
-              </Radio>
-              <Radio value="seller">
-                <Radio.Content className="flex text-xs font-medium text-zinc-400">
-                  <Radio.Control>
-                    <Radio.Indicator />
-                  </Radio.Control>
-                  Sell Products
-                </Radio.Content>
-              </Radio>
-            </RadioGroup>
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">
+              Location <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="location"
+              placeholder="City, State"
+              required
+              className="w-full bg-zinc-900/50 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+            />
           </div>
 
-          {/* Submit Button */}
+          {/* Password & Confirm Password */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min 6 chars"
+                  required
+                  className="w-full bg-zinc-900/50 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">
+                Confirm Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat password"
+                  required
+                  className="w-full bg-zinc-900/50 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit */}
           <Button
             type="submit"
             isDisabled={isSubmitting}
