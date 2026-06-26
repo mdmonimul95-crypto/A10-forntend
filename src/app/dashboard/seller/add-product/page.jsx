@@ -5,6 +5,7 @@ import { Upload, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { uploadImageToImgBB } from "@/lib/uploadImage";
 
 export default function SellerAddProductPage() {
   const router = useRouter();
@@ -39,33 +40,49 @@ export default function SellerAddProductPage() {
     if (!formData.title || !formData.description || !formData.price) {
       return toast.error("Please fill in all required fields.");
     }
+    if (!thumbnail) {
+      return toast.error("Please upload a product image.");
+    }
+    if (!user) {
+      return toast.error("You must be logged in to add a product.");
+    }
 
     setIsSubmitting(true);
 
     try {
+      // 1. Upload image to ImgBB first, get hosted URL
+      const imageUrl = await uploadImageToImgBB(thumbnail);
+
+      // 2. Build the full product object matching the backend's expected shape
       const productData = {
         ...formData,
         price: Number(formData.price),
         stock: Number(formData.stock),
+        images: [imageUrl],
         sellerInfo: {
-          userId: user?._id,
-          name: user?.name,
-          email: user?.email,
-          phone: user?.phone || "",
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || "",
         },
-        status: "available",
       };
 
-      // TODO: POST to your API
-      // await fetch("/api/products", { method: "POST", body: JSON.stringify(productData) })
+      // 3. Send to backend
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(productData),
+      });
 
-      console.log("Product Data:", productData);
-      console.log("Thumbnail:", thumbnail);
+      if (!res.ok) {
+        throw new Error("Server responded with an error");
+      }
 
       toast.success("Product listed successfully!");
       router.push("/dashboard/seller/my-products");
     } catch (err) {
-      toast.error("Something went wrong. Please try again.");
+      console.error(err);
+      toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
