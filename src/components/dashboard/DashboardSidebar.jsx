@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Drawer } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
@@ -14,7 +15,7 @@ import {
   ListOrdered,
   BarChart2,
   Users,
-  ShieldCheck,
+  Flag,
   PlusCircle,
   Menu,
 } from "lucide-react";
@@ -23,11 +24,13 @@ export function DashboardSidebar() {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
   const pathname = usePathname();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const adminNavLinks = [
     { icon: LayoutDashboard, href: "/dashboard/admin", label: "Overview" },
-    { icon: Users, href: "/dashboard/admin/manage-users", label: "Manage Users" },
-    { icon: Package, href: "/dashboard/admin/manage-products", label: "Manage Products" },
+    { icon: Users, href: "/dashboard/admin/users", label: "Manage Users" },
+    { icon: Package, href: "/dashboard/admin/products", label: "Manage Products" },
+    { icon: Flag, href: "/dashboard/admin/reported-products", label: "Reported Products" },
     { icon: ListOrdered, href: "/dashboard/admin/manage-orders", label: "Manage Orders" },
     { icon: CreditCard, href: "/dashboard/admin/payments", label: "All Payments" },
     { icon: BarChart2, href: "/dashboard/admin/analytics", label: "Platform Analytics" },
@@ -48,7 +51,6 @@ export function DashboardSidebar() {
     { icon: Heart, href: "/dashboard/buyer/wishlist", label: "Wishlist" },
     { icon: CreditCard, href: "/dashboard/buyer/payment-history", label: "Payment History" },
     { icon: User, href: "/dashboard/buyer/profile", label: "Profile Settings" },
-    { icon: User, href: "/dashboard/buyer/saved-products", label: "Saved Product" },
   ];
 
   const navLinksMap = {
@@ -83,6 +85,7 @@ export function DashboardSidebar() {
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => setIsDrawerOpen(false)}
             className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
               isActive
                 ? "bg-purple-600/20 text-purple-400 border border-purple-500/20"
@@ -121,8 +124,12 @@ export function DashboardSidebar() {
       </aside>
 
       {/* Mobile Drawer */}
-      <Drawer>
-        <Button className="lg:hidden fixed bottom-4 left-4 z-50" variant="secondary">
+      <Drawer isOpen={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <Button
+          className="lg:hidden fixed bottom-4 left-4 z-50"
+          variant="secondary"
+          onClick={() => setIsDrawerOpen(true)}
+        >
           <Menu className="size-4" />
           Menu
         </Button>
