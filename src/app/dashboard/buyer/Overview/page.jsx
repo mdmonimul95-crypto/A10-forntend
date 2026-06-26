@@ -1,21 +1,68 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ShoppingCart, Heart, CheckCircle2, Clock } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Avatar } from "@heroui/react";
 import Link from "next/link";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // e.g. http://localhost:5000
+
 export default function BuyerOverviewPage() {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
 
-  // TODO: replace with real data from API
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [loadingWishlist, setLoadingWishlist] = useState(true);
+
+  useEffect(() => {
+    if (!user?.email) return;
+
+    const fetchOrders = async () => {
+      try {
+        setLoadingOrders(true);
+        const res = await fetch(`${API_URL}/api/orders/buyer/${user.email}`);
+        const data = await res.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch buyer orders:", error);
+        setOrders([]);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+
+    const fetchWishlist = async () => {
+      try {
+        setLoadingWishlist(true);
+        const res = await fetch(`${API_URL}/api/wishlist/${user.email}`);
+        const data = await res.json();
+        setWishlistCount(Array.isArray(data) ? data.length : 0);
+      } catch (error) {
+        console.error("Failed to fetch wishlist:", error);
+        setWishlistCount(0);
+      } finally {
+        setLoadingWishlist(false);
+      }
+    };
+
+    fetchOrders();
+    fetchWishlist();
+  }, [user?.email]);
+
+  // ---- Derived Stats from real orders ----
+  const totalOrders = orders.length;
+  const completedOrders = orders.filter((o) => o.orderStatus === "Delivered").length;
+  const pendingOrders = orders.filter((o) => o.orderStatus === "Pending").length;
+
   const stats = [
     {
       id: 1,
       title: "Total Orders",
-      value: 12,
+      value: totalOrders,
       icon: ShoppingCart,
       color: "text-purple-400",
       bg: "bg-purple-500/10",
@@ -23,7 +70,7 @@ export default function BuyerOverviewPage() {
     {
       id: 2,
       title: "Wishlist",
-      value: 5,
+      value: wishlistCount,
       icon: Heart,
       color: "text-pink-400",
       bg: "bg-pink-500/10",
@@ -31,7 +78,7 @@ export default function BuyerOverviewPage() {
     {
       id: 3,
       title: "Completed",
-      value: 9,
+      value: completedOrders,
       icon: CheckCircle2,
       color: "text-emerald-400",
       bg: "bg-emerald-500/10",
@@ -39,40 +86,27 @@ export default function BuyerOverviewPage() {
     {
       id: 4,
       title: "Pending",
-      value: 3,
+      value: pendingOrders,
       icon: Clock,
       color: "text-amber-400",
       bg: "bg-amber-500/10",
     },
   ];
 
-  // TODO: replace with real recent purchases from API
-  const recentPurchases = [
-    {
-      id: 1,
-      title: "Used Dell Inspiron 15 Laptop",
-      category: "Electronics",
-      price: 35000,
-      status: "Delivered",
-      date: "2025-06-10",
-    },
-    {
-      id: 2,
-      title: "Wooden Study Table",
-      category: "Furniture",
-      price: 8000,
-      status: "Processing",
-      date: "2025-06-18",
-    },
-    {
-      id: 3,
-      title: "Samsung Galaxy A52",
-      category: "Mobile Phones",
-      price: 22000,
-      status: "Pending",
-      date: "2025-06-20",
-    },
-  ];
+  // ---- Recent Purchases: latest 3 orders sorted by date ----
+  const recentPurchases = [...orders]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3)
+    .map((order) => ({
+      id: order._id,
+      title: order.productTitle || order.title || "Product",
+      category: order.category || "N/A",
+      price: order.price || order.amount || 0,
+      status: order.orderStatus || "Pending",
+      date: order.createdAt
+        ? new Date(order.createdAt).toISOString().split("T")[0]
+        : "N/A",
+    }));
 
   if (isPending) {
     return (
@@ -84,7 +118,6 @@ export default function BuyerOverviewPage() {
 
   return (
     <div className="w-full max-w-5xl mx-auto p-6 bg-zinc-950 text-zinc-100 min-h-screen">
-
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -104,8 +137,12 @@ export default function BuyerOverviewPage() {
             </Avatar.Fallback>
           </Avatar>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold text-zinc-200 truncate">{user?.name}</span>
-            <span className="text-xs text-rose-400 font-medium capitalize">{user?.role || "buyer"}</span>
+            <span className="text-sm font-semibold text-zinc-200 truncate">
+              {user?.name}
+            </span>
+            <span className="text-xs text-rose-400 font-medium capitalize">
+              {user?.role || "buyer"}
+            </span>
           </div>
         </div>
       </div>
@@ -124,7 +161,15 @@ export default function BuyerOverviewPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                 {stat.title}
               </span>
-              <span className="text-3xl font-extrabold text-zinc-100">{stat.value}</span>
+              <span className="text-3xl font-extrabold text-zinc-100">
+                {stat.title === "Wishlist"
+                  ? loadingWishlist
+                    ? "—"
+                    : stat.value
+                  : loadingOrders
+                  ? "—"
+                  : stat.value}
+              </span>
             </div>
           </div>
         ))}
@@ -132,7 +177,6 @@ export default function BuyerOverviewPage() {
 
       {/* Recent Purchases */}
       <div className="w-full bg-zinc-900/40 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-xl">
-
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/60">
           <h2 className="text-base font-bold text-zinc-100">Recent Purchases</h2>
           <Link
@@ -154,37 +198,52 @@ export default function BuyerOverviewPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-900/60">
-              {recentPurchases.map((item) => (
-                <tr key={item.id} className="hover:bg-zinc-900/10 transition-colors">
-                  <td className="py-4 px-6">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-semibold text-zinc-100">{item.title}</span>
-                      <span className="text-xs text-zinc-500">{item.category}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-sm font-bold text-zinc-200">
-                    ৳{item.price.toLocaleString()}
-                  </td>
-                  <td className="py-4 px-4 text-sm text-zinc-400">
-                    {item.date}
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      item.status === "Delivered"
-                        ? "bg-emerald-950/30 border-emerald-900/60 text-emerald-400"
-                        : item.status === "Processing"
-                        ? "bg-blue-950/30 border-blue-900/60 text-blue-400"
-                        : "bg-amber-950/30 border-amber-900/60 text-amber-400"
-                    }`}>
-                      {item.status}
-                    </span>
+              {loadingOrders ? (
+                <tr>
+                  <td colSpan={4} className="py-6 px-6 text-sm text-zinc-500 text-center">
+                    Loading recent purchases...
                   </td>
                 </tr>
-              ))}
+              ) : recentPurchases.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-6 px-6 text-sm text-zinc-500 text-center">
+                    No purchases yet.
+                  </td>
+                </tr>
+              ) : (
+                recentPurchases.map((item) => (
+                  <tr key={item.id} className="hover:bg-zinc-900/10 transition-colors">
+                    <td className="py-4 px-6">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-semibold text-zinc-100">
+                          {item.title}
+                        </span>
+                        <span className="text-xs text-zinc-500">{item.category}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-sm font-bold text-zinc-200">
+                      ৳{Number(item.price).toLocaleString()}
+                    </td>
+                    <td className="py-4 px-4 text-sm text-zinc-400">{item.date}</td>
+                    <td className="py-4 px-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                          item.status === "Delivered"
+                            ? "bg-emerald-950/30 border-emerald-900/60 text-emerald-400"
+                            : item.status === "Processing" || item.status === "Shipped" || item.status === "Accepted"
+                            ? "bg-blue-950/30 border-blue-900/60 text-blue-400"
+                            : "bg-amber-950/30 border-amber-900/60 text-amber-400"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );

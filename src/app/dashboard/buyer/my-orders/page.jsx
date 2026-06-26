@@ -1,67 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { Eye, XCircle, AlertCircle } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Eye, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
 
-// TODO: replace with real data from API
-const initialOrders = [
-  {
-    id: "order001",
-    title: "Used Dell Inspiron 15 Laptop",
-    category: "Electronics",
-    price: 35000,
-    quantity: 1,
-    orderStatus: "Pending",
-    paymentStatus: "paid",
-    date: "2025-06-20",
-    seller: "Nusrat Jahan",
-  },
-  {
-    id: "order002",
-    title: "Wooden Study Table",
-    category: "Furniture",
-    price: 8000,
-    quantity: 1,
-    orderStatus: "Processing",
-    paymentStatus: "paid",
-    date: "2025-06-18",
-    seller: "Karim Uddin",
-  },
-  {
-    id: "order003",
-    title: "Samsung Galaxy A52",
-    category: "Mobile Phones",
-    price: 22000,
-    quantity: 1,
-    orderStatus: "Shipped",
-    paymentStatus: "paid",
-    date: "2025-06-15",
-    seller: "Tasnim Akter",
-  },
-  {
-    id: "order004",
-    title: "Nike Running Shoes",
-    category: "Fashion",
-    price: 4500,
-    quantity: 1,
-    orderStatus: "Delivered",
-    paymentStatus: "paid",
-    date: "2025-06-10",
-    seller: "Rafiq Islam",
-  },
-  {
-    id: "order005",
-    title: "Honda CB150R",
-    category: "Vehicles",
-    price: 180000,
-    quantity: 1,
-    orderStatus: "Cancelled",
-    paymentStatus: "paid",
-    date: "2025-06-05",
-    seller: "Sabbir Ahmed",
-  },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // e.g. http://localhost:5000
 
 const statusColor = (status) => {
   switch (status) {
@@ -78,17 +22,64 @@ const statusColor = (status) => {
 const cancellableStatuses = ["Pending", "Accepted"];
 
 export default function BuyerMyOrdersPage() {
-  const [orders, setOrders] = useState(initialOrders);
-  const [cancelConfirmId, setCancelConfirmId] = useState(null);
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
 
-  const handleCancel = (id) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === id ? { ...order, orderStatus: "Cancelled" } : order
-      )
-    );
-    setCancelConfirmId(null);
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [cancelConfirmId, setCancelConfirmId] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
+
+  const fetchOrders = async () => {
+    if (!user?.email) return;
+    try {
+      setLoadingOrders(true);
+      const res = await fetch(`${API_URL}/api/orders/buyer/${user.email}`);
+      const data = await res.json();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch buyer orders:", error);
+      setOrders([]);
+    } finally {
+      setLoadingOrders(false);
+    }
   };
+
+  useEffect(() => {
+    fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email]);
+
+  const handleCancel = async (id) => {
+    try {
+      setCancellingId(id);
+      const res = await fetch(`${API_URL}/api/orders/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderStatus: "Cancelled" }),
+      });
+      await res.json();
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === id ? { ...order, orderStatus: "Cancelled" } : order
+        )
+      );
+    } catch (error) {
+      console.error("Failed to cancel order:", error);
+    } finally {
+      setCancellingId(null);
+      setCancelConfirmId(null);
+    }
+  };
+
+  if (isPending || loadingOrders) {
+    return (
+      <div className="w-full min-h-screen bg-zinc-950 text-zinc-400 flex items-center justify-center text-sm font-medium">
+        Loading your orders...
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-zinc-950 text-zinc-100 p-6">
@@ -135,84 +126,108 @@ export default function BuyerMyOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-900/60">
-                {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-zinc-900/10 transition-colors">
+                {orders.map((order) => {
+                  const title = order.productTitle || order.title || "Product";
+                  const category = order.category || "N/A";
+                  const price = order.price || order.amount || 0;
+                  const seller = order.sellerInfo?.name || order.seller || "N/A";
+                  const date = order.createdAt
+                    ? new Date(order.createdAt).toISOString().split("T")[0]
+                    : "N/A";
+                  const paymentStatus = order.paymentStatus || "pending";
 
-                    {/* Product */}
-                    <td className="py-4 px-5">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-sm text-zinc-100">{order.title}</span>
-                        <span className="text-xs text-zinc-500">{order.category}</span>
-                      </div>
-                    </td>
+                  return (
+                    <tr key={order._id} className="hover:bg-zinc-900/10 transition-colors">
 
-                    {/* Seller */}
-                    <td className="py-4 px-4 text-sm text-zinc-300">{order.seller}</td>
+                      {/* Product */}
+                      <td className="py-4 px-5">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold text-sm text-zinc-100">{title}</span>
+                          <span className="text-xs text-zinc-500">{category}</span>
+                        </div>
+                      </td>
 
-                    {/* Price */}
-                    <td className="py-4 px-4 font-bold text-sm text-zinc-200">
-                      ৳{order.price.toLocaleString()}
-                    </td>
+                      {/* Seller */}
+                      <td className="py-4 px-4 text-sm text-zinc-300">{seller}</td>
 
-                    {/* Date */}
-                    <td className="py-4 px-4 text-sm text-zinc-400">{order.date}</td>
+                      {/* Price */}
+                      <td className="py-4 px-4 font-bold text-sm text-zinc-200">
+                        ৳{Number(price).toLocaleString()}
+                      </td>
 
-                    {/* Payment Status */}
-                    <td className="py-4 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-950/30 border-emerald-900/60 text-emerald-400 uppercase">
-                        {order.paymentStatus}
-                      </span>
-                    </td>
+                      {/* Date */}
+                      <td className="py-4 px-4 text-sm text-zinc-400">{date}</td>
 
-                    {/* Order Status */}
-                    <td className="py-4 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusColor(order.orderStatus)}`}>
-                        {order.orderStatus}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-4 px-5">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* View Details */}
-                        <Link
-                          href={`/dashboard/buyer/my-orders/${order.id}`}
-                          className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+                      {/* Payment Status */}
+                      <td className="py-4 px-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase ${
+                            paymentStatus === "paid"
+                              ? "bg-emerald-950/30 border-emerald-900/60 text-emerald-400"
+                              : paymentStatus === "failed"
+                              ? "bg-red-950/30 border-red-900/60 text-red-400"
+                              : "bg-amber-950/30 border-amber-900/60 text-amber-400"
+                          }`}
                         >
-                          <Eye className="size-4" />
-                        </Link>
+                          {paymentStatus}
+                        </span>
+                      </td>
 
-                        {/* Cancel Button — only for Pending/Accepted */}
-                        {cancellableStatuses.includes(order.orderStatus) && (
-                          cancelConfirmId === order.id ? (
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => handleCancel(order.id)}
-                                className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition cursor-pointer"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                onClick={() => setCancelConfirmId(null)}
-                                className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition cursor-pointer"
-                              >
-                                No
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setCancelConfirmId(order.id)}
-                              className="p-2 rounded-lg bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-500 hover:text-white transition cursor-pointer"
-                            >
-                              <XCircle className="size-4" />
-                            </button>
-                          )
-                        )}
-                      </div>
-                    </td>
+                      {/* Order Status */}
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusColor(order.orderStatus)}`}>
+                          {order.orderStatus}
+                        </span>
+                      </td>
 
-                  </tr>
-                ))}
+                      {/* Actions */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* View Details */}
+                          <Link
+                            href={`/dashboard/buyer/my-orders/${order._id}`}
+                            className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+                          >
+                            <Eye className="size-4" />
+                          </Link>
+
+                          {/* Cancel Button — only for Pending/Accepted */}
+                          {cancellableStatuses.includes(order.orderStatus) && (
+                            cancelConfirmId === order._id ? (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handleCancel(order._id)}
+                                  disabled={cancellingId === order._id}
+                                  className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition cursor-pointer disabled:opacity-60"
+                                >
+                                  {cancellingId === order._id ? (
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                  ) : (
+                                    "Confirm"
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => setCancelConfirmId(null)}
+                                  className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition cursor-pointer"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setCancelConfirmId(order._id)}
+                                className="p-2 rounded-lg bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-500 hover:text-white transition cursor-pointer"
+                              >
+                                <XCircle className="size-4" />
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
