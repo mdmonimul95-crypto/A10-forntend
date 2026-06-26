@@ -58,14 +58,40 @@ export default function ProductDetailsPage() {
     router.push(`/checkout/${id}`);
   };
 
-  const handleWishlist = () => {
-    if (!user) {
-      toast.error("Please login to add to wishlist");
-      return;
+ const handleWishlist = async () => {
+  if (!user) {
+    toast.error("Please login to add to wishlist");
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/wishlist`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // credentials: "include",
+        body: JSON.stringify({
+        buyerEmail: user.email,
+            productId: id,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to add to wishlist");
     }
-    setIsWishlisted(!isWishlisted);
-    toast.success(isWishlisted ? "Removed from wishlist" : "Added to wishlist");
-  };
+
+    setIsWishlisted(true);
+    toast.success("Added to wishlist");
+  } catch (error) {
+    toast.error(error.message || "Failed to add to wishlist");
+  }
+};
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
