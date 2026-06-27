@@ -1,20 +1,33 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { AlertCircle, Check, X, Truck, Package, CheckCircle } from "lucide-react";
+import { 
+  AlertCircle, 
+  Check, 
+  X, 
+  Truck, 
+  Package, 
+  CheckCircle, 
+  Loader2,
+  ShoppingBag,
+  Clock,
+  TrendingUp,
+  Eye
+} from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-// import { toast } from "react-hot-toast";
+import { useTheme } from "next-themes";
+import Link from "next/link";
 
 const statusColor = (status) => {
   switch (status) {
-    case "Pending": return "bg-amber-950/30 border-amber-900/60 text-amber-400";
-    case "Accepted": return "bg-blue-950/30 border-blue-900/60 text-blue-400";
-    case "Processing": return "bg-purple-950/30 border-purple-900/60 text-purple-400";
-    case "Shipped": return "bg-cyan-950/30 border-cyan-900/60 text-cyan-400";
-    case "Delivered": return "bg-emerald-950/30 border-emerald-900/60 text-emerald-400";
-    case "Cancelled": return "bg-red-950/30 border-red-900/60 text-red-400";
-    default: return "bg-zinc-900/60 border-zinc-700 text-zinc-400";
+    case "Pending": return "bg-amber-500/10 text-amber-400 border-amber-500/20";
+    case "Accepted": return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+    case "Processing": return "bg-purple-500/10 text-purple-400 border-purple-500/20";
+    case "Shipped": return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+    case "Delivered": return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+    case "Cancelled": return "bg-red-500/10 text-red-400 border-red-500/20";
+    default: return "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
   }
 };
 
@@ -24,28 +37,33 @@ export default function SellerManageOrdersPage() {
   const { data: session } = authClient.useSession();
   const user = session?.user;
 
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
 
-const fetchOrders = useCallback(async () => {
-  if (!user?.email) return;
-  try {
-    setLoading(true);
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/orders/seller/${user?.email}`
-    );
-    if (!res.ok) throw new Error("Failed to fetch");
-    const data = await res.json();
-    setOrders(Array.isArray(data) ? data : []);
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to load orders");
-    setOrders([]);
-  } finally {
-    setLoading(false);
-  }
-}, [user?.email]);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  const fetchOrders = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      setLoading(true);
+      const res = await fetch(
+        `${API_BASE_URL}/api/orders/seller/${user?.email}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load orders");
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.email, API_BASE_URL]);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -56,7 +74,7 @@ const fetchOrders = useCallback(async () => {
     try {
       setUpdatingId(orderId);
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}/status`,
+        `${API_BASE_URL}/api/orders/${orderId}/status`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -83,188 +101,264 @@ const fetchOrders = useCallback(async () => {
     return idx !== -1 && idx < statusFlow.length - 1 ? statusFlow[idx + 1] : null;
   };
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Pending": return <Clock className="size-3.5" />;
+      case "Accepted": return <Check className="size-3.5" />;
+      case "Processing": return <Package className="size-3.5" />;
+      case "Shipped": return <Truck className="size-3.5" />;
+      case "Delivered": return <CheckCircle className="size-3.5" />;
+      case "Cancelled": return <X className="size-3.5" />;
+      default: return null;
+    }
+  };
+
+  const stats = [
+    {
+      label: "Total Orders",
+      value: orders.length,
+      icon: ShoppingBag,
+      color: "text-purple-400",
+      bg: "bg-purple-500/10",
+    },
+    {
+      label: "Pending",
+      value: orders.filter(o => o.orderStatus === "Pending").length,
+      icon: Clock,
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
+    },
+    {
+      label: "In Progress",
+      value: orders.filter(o => ["Accepted", "Processing", "Shipped"].includes(o.orderStatus)).length,
+      icon: TrendingUp,
+      color: "text-blue-400",
+      bg: "bg-blue-500/10",
+    },
+    {
+      label: "Delivered",
+      value: orders.filter(o => o.orderStatus === "Delivered").length,
+      icon: CheckCircle,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+    },
+  ];
+
+  const themeStyles = {
+    bg: isDark ? "bg-zinc-950" : "bg-gray-50",
+    text: isDark ? "text-zinc-100" : "text-gray-900",
+    textSecondary: isDark ? "text-zinc-400" : "text-gray-500",
+    textMuted: isDark ? "text-zinc-500" : "text-gray-400",
+    border: isDark ? "border-zinc-800" : "border-gray-200",
+    cardBg: isDark ? "bg-zinc-900/50" : "bg-white",
+    cardBorder: isDark ? "border-zinc-800" : "border-gray-200",
+    hoverBg: isDark ? "hover:bg-zinc-800/50" : "hover:bg-gray-50",
+    tableHeader: isDark ? "bg-zinc-900/50" : "bg-gray-50",
+  };
+
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-zinc-950 flex flex-col gap-4 p-6">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-16 rounded-xl bg-zinc-800/50 animate-pulse" />
-        ))}
+      <div className={`w-full min-h-screen ${themeStyles.bg} flex items-center justify-center`}>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="size-10 text-purple-500 animate-spin" />
+          <p className={`text-sm ${themeStyles.textSecondary}`}>Loading orders...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-screen bg-zinc-950 text-zinc-100 p-6">
-      <div className="max-w-6xl mx-auto flex flex-col gap-6">
+    <div className={`w-full min-h-screen ${themeStyles.bg} ${themeStyles.text} p-6 transition-colors duration-300`}>
+      <div className="max-w-7xl mx-auto">
 
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
-            Manage Orders
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Accept, reject, and update delivery status of incoming orders.
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight">Manage Orders</h1>
+          <p className={`text-sm ${themeStyles.textSecondary} mt-1`}>
+            Manage and track all your incoming orders
           </p>
         </div>
 
-        {/* Empty State */}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.label}
+                className={`${themeStyles.cardBg} ${themeStyles.cardBorder} border rounded-xl p-5 transition-all hover:shadow-lg`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${stat.bg}`}>
+                    <Icon className={`size-5 ${stat.color}`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${themeStyles.textSecondary}`}>
+                      {stat.label}
+                    </p>
+                    <p className={`text-2xl font-bold ${themeStyles.text}`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Orders Table */}
         {orders.length === 0 ? (
-          <div className="w-full bg-zinc-900/20 border border-dashed border-zinc-900 rounded-2xl p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
-            <div className="p-4 rounded-full bg-zinc-900/50 border border-zinc-800 text-zinc-500 mb-4">
-              <AlertCircle className="size-8" />
+          <div className={`${themeStyles.cardBg} ${themeStyles.cardBorder} border rounded-2xl p-12 text-center`}>
+            <div className="flex flex-col items-center gap-4">
+              <div className={`p-4 rounded-full ${themeStyles.cardBg} ${themeStyles.border} border`}>
+                <Package className="size-10 text-zinc-500" />
+              </div>
+              <h3 className="text-lg font-semibold">No Orders Yet</h3>
+              <p className={`text-sm ${themeStyles.textSecondary} max-w-sm`}>
+                You haven't received any orders yet. When customers place orders, they'll appear here.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-zinc-200">No Orders Yet</h3>
-            <p className="text-sm text-zinc-500 max-w-sm mt-1.5">
-              You have not received any orders yet.
-            </p>
           </div>
         ) : (
-          <div className="w-full bg-zinc-900/30 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-xl overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[900px]">
-              <thead>
-                <tr className="border-b border-zinc-800/60 bg-zinc-900/10 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                  <th className="py-4 px-5">Product</th>
-                  <th className="py-4 px-4">Buyer</th>
-                  <th className="py-4 px-4">Price</th>
-                  <th className="py-4 px-4">Date</th>
-                  <th className="py-4 px-4">Payment</th>
-                  <th className="py-4 px-4">Status</th>
-                  <th className="py-4 px-5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900/60">
-                {orders.map((order) => {
-                  const nextStatus = getNextStatus(order.orderStatus);
-                  const isCancelled = order.orderStatus === "Cancelled";
-                  const isDelivered = order.orderStatus === "Delivered";
-                  const isPending = order.orderStatus === "Pending";
+          <div className={`${themeStyles.cardBg} ${themeStyles.cardBorder} border rounded-2xl overflow-hidden`}>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className={`border-b ${themeStyles.border} ${themeStyles.tableHeader}`}>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Order
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider hidden sm:table-cell">
+                      Customer
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider hidden md:table-cell">
+                      Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider hidden lg:table-cell">
+                      Payment
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/50">
+                  {orders.map((order) => {
+                    const nextStatus = getNextStatus(order.orderStatus);
+                    const isCancelled = order.orderStatus === "Cancelled";
+                    const isDelivered = order.orderStatus === "Delivered";
+                    const isPending = order.orderStatus === "Pending";
 
-                  return (
-                    <tr key={order._id} className="hover:bg-zinc-900/10 transition-colors">
-
-                      {/* Product */}
-                      <td className="py-4 px-5">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-sm text-zinc-100">
-                            {order.productTitle || "Product"}
+                    return (
+                      <tr key={order._id} className={`${themeStyles.hoverBg} transition-colors`}>
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="font-medium text-sm">{order.productTitle || "Product"}</p>
+                            <p className={`text-xs ${themeStyles.textMuted}`}>#{order._id?.slice(-8)}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 hidden sm:table-cell">
+                          <div>
+                            <p className="text-sm">{order.buyerInfo?.name || "N/A"}</p>
+                            <p className={`text-xs ${themeStyles.textMuted}`}>{order.buyerInfo?.email || "N/A"}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-emerald-400">
+                          ৳{(order.price || order.amount || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 hidden md:table-cell">
+                          <p className={`text-sm ${themeStyles.textSecondary}`}>
+                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "—"}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4 hidden lg:table-cell">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            order.paymentStatus === "paid"
+                              ? "bg-emerald-500/10 text-emerald-400"
+                              : "bg-amber-500/10 text-amber-400"
+                          }`}>
+                            {order.paymentStatus || "pending"}
                           </span>
-                          <span className="text-xs text-zinc-500">
-                            ID: {order._id?.slice(-6)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${statusColor(order.orderStatus)}`}>
+                            {getStatusIcon(order.orderStatus)}
+                            {order.orderStatus}
                           </span>
-                        </div>
-                      </td>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Pending Actions */}
+                            {isPending && (
+                              <>
+                                <button
+                                  onClick={() => updateStatus(order._id, "Accepted")}
+                                  disabled={updatingId === order._id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Check className="size-3.5" />
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => updateStatus(order._id, "Cancelled")}
+                                  disabled={updatingId === order._id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <X className="size-3.5" />
+                                  Reject
+                                </button>
+                              </>
+                            )}
 
-                      {/* Buyer */}
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-zinc-200">
-                            {order.buyerInfo?.name}
-                          </span>
-                          <span className="text-xs text-zinc-500">
-                            {order.buyerInfo?.email}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Price */}
-                      <td className="py-4 px-4 font-bold text-sm text-zinc-200">
-                        ৳{(order.price || 0).toLocaleString()}
-                      </td>
-
-                      {/* Date */}
-                      <td className="py-4 px-4 text-sm text-zinc-400">
-                        {order.createdAt
-                          ? new Date(order.createdAt).toLocaleDateString()
-                          : "—"}
-                      </td>
-
-                      {/* Payment */}
-                      <td className="py-4 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase ${
-                          order.paymentStatus === "paid"
-                            ? "bg-emerald-950/30 border-emerald-900/60 text-emerald-400"
-                            : "bg-amber-950/30 border-amber-900/60 text-amber-400"
-                        }`}>
-                          {order.paymentStatus || "pending"}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-4 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusColor(order.orderStatus)}`}>
-                          {order.orderStatus}
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-4 px-5">
-                        <div className="flex items-center justify-end gap-2">
-
-                          {/* Pending — Accept or Reject */}
-                          {isPending && (
-                            <>
+                            {/* Next Status */}
+                            {!isPending && !isCancelled && !isDelivered && nextStatus && (
                               <button
-                                onClick={() => updateStatus(order._id, "Accepted")}
+                                onClick={() => updateStatus(order._id, nextStatus)}
                                 disabled={updatingId === order._id}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-950/30 border border-emerald-900/60 text-emerald-400 hover:bg-emerald-500 hover:text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-white text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                <Check className="size-3.5" />
-                                Accept
+                                {updatingId === order._id ? (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                ) : (
+                                  <>
+                                    {getStatusIcon(nextStatus)}
+                                    {nextStatus}
+                                  </>
+                                )}
                               </button>
-                              <button
-                                onClick={() => updateStatus(order._id, "Cancelled")}
-                                disabled={updatingId === order._id}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-500 hover:text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
-                              >
-                                <X className="size-3.5" />
-                                Reject
-                              </button>
-                            </>
-                          )}
+                            )}
 
-                          {/* Next Status Button */}
-                          {!isPending && !isCancelled && !isDelivered && nextStatus && (
-                            <button
-                              onClick={() => updateStatus(order._id, nextStatus)}
-                              disabled={updatingId === order._id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                            {/* View Details */}
+                            <Link
+                              href={`/dashboard/seller/order/${order._id}`}
+                              className="p-1.5 rounded-lg hover:bg-zinc-800/50 transition-colors"
                             >
-                              {nextStatus === "Shipped" ? (
-                                <Truck className="size-3.5" />
-                              ) : nextStatus === "Delivered" ? (
-                                <CheckCircle className="size-3.5" />
-                              ) : (
-                                <Package className="size-3.5" />
-                              )}
-                              {nextStatus}
-                            </button>
-                          )}
+                              <Eye className="size-4 text-zinc-400 hover:text-zinc-200" />
+                            </Link>
 
-                          {/* Delivered */}
-                          {isDelivered && (
-                            <span className="text-xs text-emerald-400 font-bold">
-                              ✓ Completed
-                            </span>
-                          )}
-
-                          {/* Cancelled */}
-                          {isCancelled && (
-                            <span className="text-xs text-red-400 font-bold">
-                              ✗ Cancelled
-                            </span>
-                          )}
-
-                        </div>
-                      </td>
-
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            {/* Completed/Cancelled Status */}
+                            {isDelivered && (
+                              <span className="text-xs font-medium text-emerald-400">✓ Completed</span>
+                            )}
+                            {isCancelled && (
+                              <span className="text-xs font-medium text-red-400">✗ Cancelled</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-
       </div>
     </div>
   );

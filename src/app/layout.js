@@ -1,9 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from 'sonner';
+import { Toaster } from "sonner";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
-
+import Providers from "@/components/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,15 +26,16 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-     data-theme="dark"
-      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-     
-      <body className="min-h-full flex flex-col">
-        <Navbar />
-        {children}
-        <Toaster position="top-left" richColors />
-        <Footer/>
+      <body className="min-h-full flex flex-col bg-white dark:bg-[#09090b]">
+        <Providers>
+          <Navbar />
+          {children}
+          <Toaster position="top-left" richColors />
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

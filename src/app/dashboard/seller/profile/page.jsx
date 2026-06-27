@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Camera, Mail, Save } from "lucide-react";
+import { Camera, Mail, Save, User, MapPin, Phone, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { useTheme } from "next-themes";
 
 export default function SellerProfileSettingsPage() {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
+
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,6 +21,25 @@ export default function SellerProfileSettingsPage() {
     bio: "",
     image: "",
   });
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  const themeStyles = {
+    bg: isDark ? "bg-zinc-950" : "bg-gray-50",
+    text: isDark ? "text-zinc-100" : "text-gray-900",
+    textSecondary: isDark ? "text-zinc-400" : "text-gray-500",
+    textMuted: isDark ? "text-zinc-500" : "text-gray-400",
+    border: isDark ? "border-zinc-800" : "border-gray-200",
+    cardBg: isDark ? "bg-zinc-900/50" : "bg-white",
+    cardBorder: isDark ? "border-zinc-800" : "border-gray-200",
+    inputBg: isDark ? "bg-zinc-950/60" : "bg-gray-50/60",
+    inputBorder: isDark ? "border-zinc-800" : "border-gray-200",
+    inputText: isDark ? "text-zinc-200" : "text-gray-800",
+    inputPlaceholder: isDark ? "placeholder-zinc-600" : "placeholder-gray-400",
+    label: isDark ? "text-zinc-400" : "text-gray-600",
+    disabledBg: isDark ? "bg-zinc-950/30" : "bg-gray-100/30",
+    disabledText: isDark ? "text-zinc-500" : "text-gray-500",
+  };
 
   useEffect(() => {
     if (user) {
@@ -45,15 +68,13 @@ export default function SellerProfileSettingsPage() {
     setIsSubmitting(true);
 
     try {
-      // Better Auth update
       await authClient.updateUser({
         name: formData.name,
         image: formData.image,
       });
 
-      // Backend DB update
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user?.email}`,
+        `${API_BASE_URL}/api/users/${user?.email}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -79,11 +100,10 @@ export default function SellerProfileSettingsPage() {
 
   if (isPending) {
     return (
-      <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen">
-        <div className="max-w-2xl mx-auto flex flex-col gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-14 rounded-xl bg-zinc-800/50 animate-pulse" />
-          ))}
+      <div className={`w-full min-h-screen ${themeStyles.bg} flex items-center justify-center p-4`}>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="size-8 sm:size-10 text-purple-500 animate-spin" />
+          <p className={`text-sm ${themeStyles.textSecondary}`}>Loading profile...</p>
         </div>
       </div>
     );
@@ -98,23 +118,21 @@ export default function SellerProfileSettingsPage() {
     : "—";
 
   return (
-    <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen">
+    <div className={`w-full min-h-screen ${themeStyles.bg} ${themeStyles.text} p-4 sm:p-6 transition-colors duration-300`}>
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
-            Profile Settings
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Update your seller account information.
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Profile Settings</h1>
+          <p className={`text-sm ${themeStyles.textSecondary} mt-1`}>
+            Update your seller account information
           </p>
         </div>
 
-        {/* Profile Summary Card */}
-        <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 flex items-center gap-4 mb-5">
+        {/* Profile Summary Card - Responsive */}
+        <div className={`${themeStyles.cardBg} ${themeStyles.cardBorder} border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-6 shadow-sm`}>
           <div className="relative shrink-0">
-            <div className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-lg overflow-hidden">
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl sm:text-2xl overflow-hidden shadow-lg shadow-purple-500/20">
               {formData.image ? (
                 <img
                   src={formData.image}
@@ -126,90 +144,106 @@ export default function SellerProfileSettingsPage() {
                 user?.name?.charAt(0)?.toUpperCase() || "S"
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300">
+            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-zinc-800 border-2 border-zinc-700 text-zinc-300">
               <Camera className="size-3.5" />
             </div>
           </div>
-          <div>
-            <h2 className="text-base font-bold text-zinc-100">{user?.name || "Seller"}</h2>
-            <p className="text-sm text-zinc-400">{user?.email}</p>
-            <p className="text-xs text-zinc-500 mt-0.5">
+          <div className="text-center sm:text-left flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold truncate">{user?.name || "Seller"}</h2>
+            <p className={`text-sm ${themeStyles.textSecondary} truncate`}>{user?.email}</p>
+            <p className={`text-xs ${themeStyles.textMuted} mt-0.5 flex flex-wrap items-center justify-center sm:justify-start gap-1`}>
               <span className="text-emerald-400 font-medium capitalize">{user?.role || "Seller"}</span>
-              {" • "}Member since {memberSince}
+              <span className="hidden sm:inline">•</span>
+              <span>Member since {memberSince}</span>
             </p>
           </div>
         </div>
 
-        {/* Form */}
+        {/* Form - Responsive */}
         <form
           onSubmit={handleSubmit}
-          className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 flex flex-col gap-5 text-sm"
+          className={`${themeStyles.cardBg} ${themeStyles.cardBorder} border rounded-2xl p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 shadow-sm`}
         >
-          <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400">
+          <h3 className={`text-xs font-bold uppercase tracking-wider ${themeStyles.textSecondary}`}>
             Personal Information
           </h3>
 
-          {/* Name & Email */}
+          {/* Name & Email - Responsive Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-zinc-400">
+              <label className={`text-xs font-semibold ${themeStyles.label}`}>
                 Full Name <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
-              />
+              <div className="relative">
+                <User className={`absolute left-3 top-1/2 -translate-y-1/2 size-4 ${themeStyles.textMuted}`} />
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className={`w-full ${themeStyles.inputBg} ${themeStyles.inputBorder} ${themeStyles.inputText} ${themeStyles.inputPlaceholder} rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm`}
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-zinc-400 flex items-center gap-1">
-                <Mail className="size-3.5" /> Email
+              <label className={`text-xs font-semibold ${themeStyles.label}`}>
+                <Mail className="size-3.5 inline mr-1" /> Email
               </label>
-              <input
-                type="email"
-                value={user?.email || ""}
-                disabled
-                className="w-full bg-zinc-950/30 border border-zinc-800 text-zinc-500 rounded-xl px-4 py-2.5 cursor-not-allowed"
-              />
-              <span className="text-[11px] text-zinc-600">Email cannot be changed</span>
+              <div className="relative">
+                <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 size-4 ${themeStyles.textMuted}`} />
+                <input
+                  type="email"
+                  value={user?.email || ""}
+                  disabled
+                  className={`w-full ${themeStyles.disabledBg} ${themeStyles.inputBorder} ${themeStyles.disabledText} rounded-xl pl-10 pr-4 py-2.5 cursor-not-allowed text-sm`}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Phone & Location */}
+          {/* Phone & Location - Responsive Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-zinc-400">Phone</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+880 1XXX-XXXXXX"
-                className="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
-              />
+              <label className={`text-xs font-semibold ${themeStyles.label}`}>
+                <Phone className="size-3.5 inline mr-1" /> Phone
+              </label>
+              <div className="relative">
+                <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 size-4 ${themeStyles.textMuted}`} />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+880 1XXX-XXXXXX"
+                  className={`w-full ${themeStyles.inputBg} ${themeStyles.inputBorder} ${themeStyles.inputText} ${themeStyles.inputPlaceholder} rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm`}
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-zinc-400">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="Dhaka, Bangladesh"
-                className="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
-              />
+              <label className={`text-xs font-semibold ${themeStyles.label}`}>
+                <MapPin className="size-3.5 inline mr-1" /> Location
+              </label>
+              <div className="relative">
+                <MapPin className={`absolute left-3 top-1/2 -translate-y-1/2 size-4 ${themeStyles.textMuted}`} />
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="Dhaka, Bangladesh"
+                  className={`w-full ${themeStyles.inputBg} ${themeStyles.inputBorder} ${themeStyles.inputText} ${themeStyles.inputPlaceholder} rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm`}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Photo URL */}
+          {/* Photo URL - Full Width */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-zinc-400">
-              Photo URL <span className="text-zinc-600 font-normal">(Optional)</span>
+            <label className={`text-xs font-semibold ${themeStyles.label}`}>
+              Photo URL <span className={`text-xs font-normal ${themeStyles.textMuted}`}>(Optional)</span>
             </label>
             <input
               type="url"
@@ -217,34 +251,45 @@ export default function SellerProfileSettingsPage() {
               value={formData.image}
               onChange={handleChange}
               placeholder="https://example.com/photo.jpg"
-              className="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+              className={`w-full ${themeStyles.inputBg} ${themeStyles.inputBorder} ${themeStyles.inputText} ${themeStyles.inputPlaceholder} rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm`}
             />
-            <p className="text-[11px] text-zinc-600">
-              Direct image link ending with .jpg, .png, .webp etc.
-            </p>
           </div>
 
-          {/* Bio */}
+          {/* Bio - Full Width */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-zinc-400">Bio</label>
+            <label className={`text-xs font-semibold ${themeStyles.label}`}>
+              <FileText className="size-3.5 inline mr-1" /> Bio
+            </label>
             <textarea
               name="bio"
               value={formData.bio}
               onChange={handleChange}
               rows={3}
               placeholder="Tell buyers a little about yourself as a seller..."
-              className="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all resize-none"
+              className={`w-full ${themeStyles.inputBg} ${themeStyles.inputBorder} ${themeStyles.inputText} ${themeStyles.inputPlaceholder} rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all resize-none text-sm`}
             />
+            <p className={`text-xs ${themeStyles.textMuted} text-right`}>
+              {formData.bio.length}/500
+            </p>
           </div>
 
-          {/* Submit */}
+          {/* Submit Button - Responsive */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="self-start mt-1 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold px-6 py-2.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-purple-600/20 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-purple-600/25 hover:shadow-purple-600/40 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
           >
-            <Save className="size-4" />
-            {isSubmitting ? "Saving..." : "Save Changes"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="size-4" />
+                <span>Save Changes</span>
+              </>
+            )}
           </button>
         </form>
 

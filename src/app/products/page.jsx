@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -24,7 +24,7 @@ const categories = ["Electronics", "Furniture", "Vehicles", "Fashion", "Mobile P
 const conditions = ["Used", "Like New", "Refurbished"];
 const ITEMS_PER_PAGE = 9;
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const searchParams = useSearchParams();
 
   const [allProducts, setAllProducts] = useState([]);
@@ -86,18 +86,18 @@ export default function ProductsPage() {
   const hasFilters = search || category || condition || sort;
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#09090b] min-h-screen">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-zinc-50 dark:bg-[#09090b] min-h-screen">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="mb-10">
-          <div className="flex items-center gap-2 text-purple-400 text-sm font-semibold tracking-wider uppercase mb-2">
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-semibold tracking-wider uppercase mb-2">
             <Tag className="h-4 w-4" /> Marketplace
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
             All <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">Products</span>
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
             {isLoading ? "Loading..." : `${allProducts.length} products found`}
           </p>
         </div>
@@ -108,19 +108,19 @@ export default function ProductsPage() {
           {/* Search */}
           <div className="relative flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400 dark:text-zinc-500" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchProducts()}
                 placeholder="Search by product name or category..."
-                className="w-full bg-zinc-900/60 border border-zinc-800 text-zinc-200 placeholder-zinc-600 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                className="w-full bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
                   <X className="size-4" />
                 </button>
@@ -136,12 +136,12 @@ export default function ProductsPage() {
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-3">
-            <SlidersHorizontal className="size-4 text-zinc-500 shrink-0" />
+            <SlidersHorizontal className="size-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
 
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="bg-zinc-900/60 border border-zinc-800 text-zinc-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 cursor-pointer transition-all"
+              className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 cursor-pointer transition-all"
             >
               <option value="">All Categories</option>
               {categories.map((cat) => (
@@ -152,7 +152,7 @@ export default function ProductsPage() {
             <select
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
-              className="bg-zinc-900/60 border border-zinc-800 text-zinc-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 cursor-pointer transition-all"
+              className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 cursor-pointer transition-all"
             >
               <option value="">All Conditions</option>
               {conditions.map((c) => (
@@ -163,7 +163,7 @@ export default function ProductsPage() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="bg-zinc-900/60 border border-zinc-800 text-zinc-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 cursor-pointer transition-all"
+              className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 cursor-pointer transition-all"
             >
               <option value="">Default Sort</option>
               <option value="price_asc">Price: Low to High</option>
@@ -173,7 +173,7 @@ export default function ProductsPage() {
             {hasFilters && (
               <button
                 onClick={handleClearFilters}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 text-sm transition-all"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 text-sm transition-all"
               >
                 <X className="size-3.5" />
                 Clear
@@ -188,13 +188,13 @@ export default function ProductsPage() {
             <Loader2 className="size-6 animate-spin text-purple-400" />
           </div>
         ) : paginatedProducts.length === 0 ? (
-          <div className="text-center py-20 text-zinc-500 text-sm flex flex-col items-center gap-3">
-            <ImageOff className="size-10 text-zinc-700" />
+          <div className="text-center py-20 text-zinc-500 dark:text-zinc-500 text-sm flex flex-col items-center gap-3">
+            <ImageOff className="size-10 text-zinc-300 dark:text-zinc-700" />
             <p>No products found. Try changing your search or filter.</p>
             {hasFilters && (
               <button
                 onClick={handleClearFilters}
-                className="text-purple-400 hover:text-purple-300 text-sm font-medium"
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 text-sm font-medium"
               >
                 Clear all filters
               </button>
@@ -213,10 +213,10 @@ export default function ProductsPage() {
                   key={product._id}
                   variants={cardVariants}
                   whileHover={{ y: -6 }}
-                  className="group relative flex flex-col justify-between bg-zinc-900/40 border border-zinc-800/80 hover:border-purple-500/40 rounded-2xl overflow-hidden transition-all duration-300 backdrop-blur-sm"
+                  className="group relative flex flex-col justify-between bg-white dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800/80 hover:border-purple-400 dark:hover:border-purple-500/40 rounded-2xl overflow-hidden transition-all duration-300 backdrop-blur-sm"
                 >
                   {/* Image */}
-                  <div className="relative w-full aspect-[4/3] bg-zinc-800/50 overflow-hidden">
+                  <div className="relative w-full aspect-[4/3] bg-zinc-100 dark:bg-zinc-800/50 overflow-hidden">
                     {product.images?.[0] ? (
                       <img
                         src={product.images[0]}
@@ -224,7 +224,7 @@ export default function ProductsPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                      <div className="w-full h-full flex items-center justify-center text-zinc-300 dark:text-zinc-600">
                         <ImageOff className="h-8 w-8" />
                       </div>
                     )}
@@ -233,44 +233,44 @@ export default function ProductsPage() {
                   <div className="p-6">
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700/50">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/50">
                           {product.condition}
                         </span>
                         {product.sellerInfo?.verified && (
-                          <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                          <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 flex items-center gap-1">
                             <ShieldCheck className="h-3.5 w-3.5" /> Verified
                           </span>
                         )}
                       </div>
 
-                      <h3 className="text-lg font-bold text-zinc-100 group-hover:text-purple-400 transition-colors mb-2 line-clamp-1">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors mb-2 line-clamp-1">
                         {product.title}
                       </h3>
 
-                      <p className="text-xs text-zinc-500 mb-1">
-                        Category: <span className="text-zinc-400 font-medium">{product.category}</span>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-1">
+                        Category: <span className="text-zinc-600 dark:text-zinc-400 font-medium">{product.category}</span>
                       </p>
 
                       {product.location && (
-                        <p className="text-xs text-zinc-500 mb-6 flex items-center gap-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-6 flex items-center gap-1">
                           <MapPin className="h-3 w-3" /> {product.location}
                         </p>
                       )}
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between border-t border-zinc-800/60 pt-4 mb-4">
-                        <span className="text-lg font-bold text-zinc-100">
+                      <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800/60 pt-4 mb-4">
+                        <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                           ৳{Number(product.price).toLocaleString()}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-zinc-500 truncate">
-                          by <span className="text-zinc-400">{product.sellerInfo?.name}</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-500 truncate">
+                          by <span className="text-zinc-600 dark:text-zinc-400">{product.sellerInfo?.name}</span>
                         </span>
                         <Link href={`/products/${product._id}`}>
-                          <Button className="text-xs font-semibold bg-zinc-800 hover:bg-purple-600 hover:text-white text-zinc-200 px-4 py-2 rounded-xl border border-zinc-700/60 hover:border-purple-500/50 transition-all active:scale-95 whitespace-nowrap">
+                          <Button className="text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 hover:bg-purple-600 hover:text-white text-zinc-700 dark:text-zinc-200 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 hover:border-purple-500/50 transition-all active:scale-95 whitespace-nowrap">
                             View Details
                           </Button>
                         </Link>
@@ -289,7 +289,7 @@ export default function ProductsPage() {
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="size-4" />
                 </button>
@@ -301,7 +301,7 @@ export default function ProductsPage() {
 
                   if (!isNear) {
                     if (page === 2 || page === totalPages - 1) {
-                      return <span key={page} className="text-zinc-600 text-sm">...</span>;
+                      return <span key={page} className="text-zinc-400 dark:text-zinc-600 text-sm">...</span>;
                     }
                     return null;
                   }
@@ -313,7 +313,7 @@ export default function ProductsPage() {
                       className={`h-9 w-9 rounded-xl text-sm font-bold transition-all ${
                         isActive
                           ? "bg-purple-600 text-white border border-purple-500 shadow-lg shadow-purple-500/20"
-                          : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600"
+                          : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-600"
                       }`}
                     >
                       {page}
@@ -325,7 +325,7 @@ export default function ProductsPage() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronRight className="size-4" />
                 </button>
@@ -335,7 +335,7 @@ export default function ProductsPage() {
 
             {/* Page Info */}
             {totalPages > 1 && (
-              <p className="text-center text-xs text-zinc-600 mt-3">
+              <p className="text-center text-xs text-zinc-400 dark:text-zinc-600 mt-3">
                 Page {currentPage} of {totalPages} — {allProducts.length} products
               </p>
             )}
@@ -344,5 +344,19 @@ export default function ProductsPage() {
 
       </div>
     </section>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-zinc-50 dark:bg-[#09090b]">
+          <Loader2 className="size-6 animate-spin text-purple-400" />
+        </div>
+      }
+    >
+      <ProductsPageContent />
+    </Suspense>
   );
 }
