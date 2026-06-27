@@ -15,10 +15,24 @@ export default function AllUsersAdminPage() {
     const fetchUsers = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
+
+        if (!res.ok) {
+          throw new Error(`Server responded with ${res.status}`);
+        }
+
         const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error("Unexpected /api/users response:", data);
+          throw new Error("Invalid users data received");
+        }
+        console.log("USER SAMPLE:", data[0]);
+
         setUsers(data);
       } catch (error) {
+        console.error("Failed to fetch users:", error);
         toast.error("Failed to fetch users.");
+        setUsers([]);
       } finally {
         setLoading(false);
       }

@@ -1,69 +1,88 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, Heart, Package, ArrowUpRight } from "lucide-react";
+import { ShoppingBag, Heart, Package, ArrowUpRight, Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
-// Mock data — will be replaced with real API calls once backend is ready
-const overviewCards = [
-  {
-    label: "Total Orders",
-    value: 12,
-    icon: ShoppingBag,
-    iconBg: "bg-purple-500/10 border-purple-500/20",
-    iconColor: "text-purple-400",
-  },
-  {
-    label: "Wishlist Count",
-    value: 3,
-    icon: Heart,
-    iconBg: "bg-pink-500/10 border-pink-500/20",
-    iconColor: "text-pink-400",
-  },
-];
-
-const recentPurchases = [
-  {
-    id: "order001",
-    title: "Used Dell Inspiron 15 Laptop",
-    price: 35000,
-    status: "Delivered",
-    date: "19/06/2026",
-  },
-  {
-    id: "order002",
-    title: "Wooden Study Table with Chair",
-    price: 4500,
-    status: "Processing",
-    date: "15/06/2026",
-  },
-  {
-    id: "order003",
-    title: "iPhone 12, 128GB, Blue",
-    price: 38000,
-    status: "Shipped",
-    date: "10/06/2026",
-  },
-];
-
 const statusStyles = {
+  Pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  Accepted: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  Processing: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  Shipped: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
   Delivered: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  Shipped: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  Processing: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  Cancelled: "bg-red-500/10 text-red-400 border-red-500/20",
 };
 
 export default function BuyerHomePage() {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
 
-  if (isPending) {
+  const [orders, setOrders] = useState([]);
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    if (!user?.email) return;
+
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoadingData(true);
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+        const [ordersRes, wishlistRes] = await Promise.all([
+          fetch(`${baseUrl}/api/orders/buyer/${user.email}`),
+          fetch(`${baseUrl}/api/wishlist/${user.email}`),
+        ]);
+
+        const [ordersData, wishlistData] = await Promise.all([
+          ordersRes.json(),
+          wishlistRes.json(),
+        ]);
+
+        setOrders(ordersData);
+        setWishlistCount(wishlistData.length);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user?.email]);
+
+  if (isPending || isLoadingData) {
     return (
-      <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen">
-        <p className="text-zinc-500 text-sm">Loading dashboard...</p>
+      <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen flex items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-purple-400" />
       </div>
     );
   }
+
+  // Recent Purchases = only orders that were actually paid for
+  // (per doc wording: "Latest purchased products" — not pending/cancelled orders)
+  const recentPurchases = [...orders]
+    .filter((order) => order.paymentStatus === "paid")
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
+
+  const overviewCards = [
+    {
+      label: "Total Orders",
+      value: orders.length,
+      icon: ShoppingBag,
+      iconBg: "bg-purple-500/10 border-purple-500/20",
+      iconColor: "text-purple-400",
+    },
+    {
+      label: "Wishlist Count",
+      value: wishlistCount,
+      icon: Heart,
+      iconBg: "bg-pink-500/10 border-pink-500/20",
+      iconColor: "text-pink-400",
+    },
+  ];
 
   return (
     <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen space-y-6">
@@ -74,7 +93,7 @@ export default function BuyerHomePage() {
           Welcome back, {user?.name?.split(" ")[0] || "Buyer"}
         </h1>
         <p className="text-sm text-zinc-400 mt-1">
-          Here is a summary of your activity on ReSell Hub.
+          Here's a summary of your activity on ReSell Hub.
         </p>
       </div>
 
@@ -118,37 +137,51 @@ export default function BuyerHomePage() {
           </Link>
         </div>
 
-        <div className="flex flex-col divide-y divide-zinc-800/60">
-          {recentPurchases.map((order) => (
-            <div
-              key={order.id}
-              className="flex items-center justify-between gap-4 py-3.5"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-lg bg-zinc-800/60 border border-zinc-700/50 shrink-0">
-                  <Package className="h-4 w-4 text-zinc-400" />
+        {recentPurchases.length === 0 ? (
+          <p className="text-sm text-zinc-500 text-center py-8">
+            You haven't completed any purchases yet.
+          </p>
+        ) : (
+          <div className="flex flex-col divide-y divide-zinc-800/60">
+            {recentPurchases.map((order) => (
+              <div
+                key={order._id}
+                className="flex items-center justify-between gap-4 py-3.5"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-zinc-800/60 border border-zinc-700/50 shrink-0">
+                    <Package className="h-4 w-4 text-zinc-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-zinc-200 truncate">
+                      {order.productTitle || `Order #${order._id?.slice(-6)}`}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {order.createdAt
+                        ? new Date(order.createdAt).toLocaleDateString()
+                        : "—"}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-zinc-200 truncate">
-                    {order.title}
-                  </p>
-                  <p className="text-xs text-zinc-500">{order.date}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-sm font-bold text-zinc-100">
-                  ৳{order.price.toLocaleString()}
-                </span>
-                <span
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${statusStyles[order.status]}`}
-                >
-                  {order.status}
-                </span>
+                <div className="flex items-center gap-3 shrink-0">
+                  {order.price && (
+                    <span className="text-sm font-bold text-zinc-100">
+                      ৳{Number(order.price).toLocaleString()}
+                    </span>
+                  )}
+                  <span
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${
+                      statusStyles[order.orderStatus] || statusStyles.Pending
+                    }`}
+                  >
+                    {order.orderStatus || "Pending"}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
     </div>

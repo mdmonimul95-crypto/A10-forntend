@@ -1,89 +1,80 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Calendar, Receipt, User, Search, Wallet, TrendingUp, CreditCard } from "lucide-react";
-
-const initialPayments = [
-  {
-    transactionId: "BKASH-TRX-987654321",
-    buyerName: "Md. Rakib Hasan",
-    buyerId: "user001",
-    orderId: "order001",
-    amountCharged: 35000,
-    paymentMethod: "bKash",
-    paymentStatus: "success",
-    paymentDate: "19/06/2026, 11:04:20",
-  },
-  {
-    transactionId: "BKASH-TRX-887211034",
-    buyerName: "Nusrat Jahan",
-    buyerId: "user002",
-    orderId: "order002",
-    amountCharged: 4500,
-    paymentMethod: "Nagad",
-    paymentStatus: "pending",
-    paymentDate: "18/06/2026, 15:03:05",
-  },
-  {
-    transactionId: "BKASH-TRX-774120983",
-    buyerName: "Tanvir Ahmed",
-    buyerId: "user003",
-    orderId: "order003",
-    amountCharged: 38000,
-    paymentMethod: "Stripe Card",
-    paymentStatus: "failed",
-    paymentDate: "18/06/2026, 14:33:22",
-  },
-  {
-    transactionId: "BKASH-TRX-665098213",
-    buyerName: "Anika Roy",
-    buyerId: "user004",
-    orderId: "order004",
-    amountCharged: 1800,
-    paymentMethod: "Stripe Card",
-    paymentStatus: "refunded",
-    paymentDate: "18/06/2026, 11:15:40",
-  },
-];
+import React, { useEffect, useState, useMemo } from "react";
+import { Calendar, Receipt, User, Search, Wallet, TrendingUp, CreditCard, Loader2 } from "lucide-react";
 
 const statusStyles = {
   success: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  paid: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   failed: "bg-red-500/10 text-red-400 border-red-500/20",
   refunded: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 
-const statusOptions = ["all", "success", "pending", "failed", "refunded"];
+const statusOptions = ["all", "success", "paid", "pending", "failed", "refunded"];
 
 export default function AllPaymentsAdminPage() {
+  const [payments, setPayments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Filtering logic (client-side for now — will move to API query params in Phase 8)
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments`);
+        const data = await res.json();
+        setPayments(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPayments();
+  }, []);
+
+  // Filtering (client-side for now — will move to API query params once volume grows)
   const filteredPayments = useMemo(() => {
-    return initialPayments.filter((item) => {
+    return payments.filter((item) => {
+      const transactionId = item.transactionId || "";
+      const buyerName = item.buyerName || item.buyerEmail || "";
+      const orderId = item.orderId || "";
+
       const matchesSearch =
-        item.transactionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.orderId.toLowerCase().includes(searchQuery.toLowerCase());
+        transactionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        orderId.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus =
         statusFilter === "all" || item.paymentStatus === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [payments, searchQuery, statusFilter]);
 
-  // Revenue summary (only counts successful payments)
+  // Revenue summary (counts both "success" and "paid" as completed)
   const totalRevenue = useMemo(
     () =>
-      initialPayments
-        .filter((item) => item.paymentStatus === "success")
-        .reduce((sum, item) => sum + item.amountCharged, 0),
-    []
+      payments
+        .filter((item) => item.paymentStatus === "success" || item.paymentStatus === "paid")
+        .reduce((sum, item) => sum + Number(item.amount || 0), 0),
+    [payments]
   );
 
-  const successCount = initialPayments.filter((item) => item.paymentStatus === "success").length;
+  const successCount = payments.filter(
+    (item) => item.paymentStatus === "success" || item.paymentStatus === "paid"
+  ).length;
+
+  if (isLoading) {
+    return (
+      <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen flex items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-purple-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-zinc-950 text-zinc-100 p-6 min-h-screen">
@@ -125,7 +116,7 @@ export default function AllPaymentsAdminPage() {
           </div>
           <div>
             <p className="text-xs text-zinc-500 uppercase tracking-wider">Total Transactions</p>
-            <p className="text-xl font-bold text-zinc-100">{initialPayments.length}</p>
+            <p className="text-xl font-bold text-zinc-100">{payments.length}</p>
           </div>
         </div>
       </div>
@@ -136,7 +127,7 @@ export default function AllPaymentsAdminPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
           <input
             type="text"
-            placeholder="Search by transaction ID, buyer name, or order ID..."
+            placeholder="Search by transaction ID, buyer, or order ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 transition-colors"
@@ -178,18 +169,18 @@ export default function AllPaymentsAdminPage() {
               {filteredPayments.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-10 px-6 text-center text-zinc-500 text-sm">
-                    No transactions match your search/filter.
+                    No transactions found yet.
                   </td>
                 </tr>
               ) : (
-                filteredPayments.map((item, index) => (
+                filteredPayments.map((item) => (
                   <tr 
-                    key={index} 
+                    key={item._id} 
                     className="transition-colors hover:bg-zinc-800/10"
                   >
                     {/* Transaction ID */}
                     <td className="py-4 px-6 font-semibold text-cyan-400/90 whitespace-nowrap tracking-wide">
-                      {item.transactionId}
+                      {item.transactionId || "—"}
                     </td>
 
                     {/* Buyer Details (Icon + Name + ID) */}
@@ -198,11 +189,13 @@ export default function AllPaymentsAdminPage() {
                         <User className="size-4 text-zinc-500 mt-0.5 shrink-0" />
                         <div className="flex flex-col min-w-0">
                           <span className="font-bold text-zinc-200 tracking-wide break-all">
-                            {item.buyerName}
+                            {item.buyerName || item.buyerEmail || "Unknown"}
                           </span>
-                          <span className="text-xs text-zinc-500 mt-0.5 font-mono break-all">
-                            ID: {item.buyerId}
-                          </span>
+                          {item.buyerId && (
+                            <span className="text-xs text-zinc-500 mt-0.5 font-mono break-all">
+                              ID: {item.buyerId}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -211,29 +204,29 @@ export default function AllPaymentsAdminPage() {
                     <td className="py-4 px-6 text-zinc-400 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <Receipt className="size-4 text-zinc-600 shrink-0" />
-                        {item.orderId}
+                        {item.orderId || "—"}
                       </div>
                     </td>
 
                     {/* Amount Charged */}
                     <td className="py-4 px-6 font-bold text-emerald-400 whitespace-nowrap tracking-wide text-base">
-                      ৳{item.amountCharged.toLocaleString()}
+                      ৳{Number(item.amount || 0).toLocaleString()}
                     </td>
 
                     {/* Payment Method */}
                     <td className="py-4 px-6 text-zinc-400 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <CreditCard className="size-4 text-zinc-600 shrink-0" />
-                        {item.paymentMethod}
+                        {item.paymentMethod || "—"}
                       </div>
                     </td>
 
                     {/* Payment Status */}
                     <td className="py-4 px-6 whitespace-nowrap">
                       <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-md border capitalize ${statusStyles[item.paymentStatus]}`}
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-md border capitalize ${statusStyles[item.paymentStatus] || statusStyles.pending}`}
                       >
-                        {item.paymentStatus}
+                        {item.paymentStatus || "pending"}
                       </span>
                     </td>
 
@@ -242,9 +235,9 @@ export default function AllPaymentsAdminPage() {
                       <div className="flex items-start gap-2 text-xs">
                         <Calendar className="size-4 text-zinc-600 shrink-0 mt-0.5" />
                         <span className="leading-relaxed font-medium">
-                          {item.paymentDate.split(", ")[0]},
-                          <br />
-                          <span className="text-zinc-500">{item.paymentDate.split(", ")[1]}</span>
+                          {item.createdAt
+                            ? new Date(item.createdAt).toLocaleDateString()
+                            : "—"}
                         </span>
                       </div>
                     </td>

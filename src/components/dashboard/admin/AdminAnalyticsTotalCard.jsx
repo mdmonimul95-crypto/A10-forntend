@@ -1,40 +1,51 @@
 "use client";
 
-import React from "react";
-import { Users, Package, ShoppingCart } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Users, Package, ShoppingCart, Store, CheckCircle2, Loader2 } from "lucide-react";
 
-const cards = [
-  {
-    label: "Total Users",
-    value: 1284,
-    icon: Users,
-    iconBg: "bg-purple-500/10 border-purple-500/20",
-    iconColor: "text-purple-400",
-  },
-  {
-    label: "Total Products",
-    value: 3420,
-    icon: Package,
-    iconBg: "bg-pink-500/10 border-pink-500/20",
-    iconColor: "text-pink-400",
-  },
-  {
-    label: "Total Orders",
-    value: 956,
-    icon: ShoppingCart,
-    iconBg: "bg-emerald-500/10 border-emerald-500/20",
-    iconColor: "text-emerald-400",
-  },
+const cardConfig = [
+  { key: "totalUsers", label: "Total Users", icon: Users, iconBg: "bg-purple-500/10 border-purple-500/20", iconColor: "text-purple-400" },
+  { key: "totalProducts", label: "Total Products", icon: Package, iconBg: "bg-pink-500/10 border-pink-500/20", iconColor: "text-pink-400" },
+  { key: "totalOrders", label: "Total Orders", icon: ShoppingCart, iconBg: "bg-emerald-500/10 border-emerald-500/20", iconColor: "text-emerald-400" },
+  // Extra (bonus, beyond the required 3)
+  { key: "totalSellers", label: "Total Sellers", icon: Store, iconBg: "bg-amber-500/10 border-amber-500/20", iconColor: "text-amber-400" },
+  { key: "completedOrders", label: "Completed Orders", icon: CheckCircle2, iconBg: "bg-cyan-500/10 border-cyan-500/20", iconColor: "text-cyan-400" },
 ];
 
 export default function AdminAnalyticsTotalCard() {
+  const [stats, setStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stats`);
+        const data = await res.json();
+        setStats(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="size-5 animate-spin text-purple-400" />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {cards.map((card) => {
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {cardConfig.map((card) => {
         const Icon = card.icon;
         return (
           <div
-            key={card.label}
+            key={card.key}
             className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 flex items-center gap-4"
           >
             <div className={`p-3 rounded-xl border ${card.iconBg}`}>
@@ -45,7 +56,7 @@ export default function AdminAnalyticsTotalCard() {
                 {card.label}
               </p>
               <p className="text-xl font-bold text-zinc-100">
-                {card.value.toLocaleString()}
+                {(stats?.[card.key] ?? 0).toLocaleString()}
               </p>
             </div>
           </div>

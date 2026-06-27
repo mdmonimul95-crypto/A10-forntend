@@ -1,14 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Camera,
-  Save,
-} from "lucide-react";
+import React, { useEffect, useState, useCallback } from "react";
+import { User, Mail, Phone, MapPin, Camera, Save } from "lucide-react";
 import { Avatar } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
@@ -18,7 +11,6 @@ export default function BuyerProfileSettingsPage() {
   const user = session?.user;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -26,37 +18,64 @@ export default function BuyerProfileSettingsPage() {
     image: "",
   });
 
+  const fetchProfile = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users/${encodeURIComponent(user.email)}`
+      );
+
+      // user DB তে না থাকলে session থেকে data নাও
+      if (res.status === 404) {
+        setFormData({
+          name: user?.name || "",
+          phone: "",
+          location: "",
+          image: user?.image || "",
+        });
+        return;
+      }
+
+      if (!res.ok) throw new Error("Failed to fetch");
+
+      const text = await res.text();
+      if (!text) {
+        setFormData({
+          name: user?.name || "",
+          phone: "",
+          location: "",
+          image: user?.image || "",
+        });
+        return;
+      }
+
+      const data = JSON.parse(text);
+      setFormData({
+        name: data?.name || user?.name || "",
+        phone: data?.phone || "",
+        location: data?.location || "",
+        image: data?.image || user?.image || "",
+      });
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+      // error হলেও session data দিয়ে form fill করো
+      setFormData({
+        name: user?.name || "",
+        phone: "",
+        location: "",
+        image: user?.image || "",
+      });
+    }
+  }, [user?.email, user?.name, user?.image]);
+
   useEffect(() => {
     if (!user?.email) return;
-
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.email}`
-        );
-
-        const data = await res.json();
-
-        setFormData({
-          name: data?.name || "",
-          phone: data?.phone || "",
-          location: data?.location || "",
-          image: data?.image || "",
-        });
-      } catch (error) {
-        toast.error("Failed to load profile");
-      }
-    };
-
     fetchProfile();
-  }, [user]);
+  }, [user?.email, fetchProfile]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -75,12 +94,10 @@ export default function BuyerProfileSettingsPage() {
       });
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.email}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${encodeURIComponent(user.email)}`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: formData.name,
             phone: formData.phone,
@@ -90,12 +107,11 @@ export default function BuyerProfileSettingsPage() {
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Update failed");
-      }
+      if (!res.ok) throw new Error("Update failed");
 
       toast.success("Profile updated successfully!");
     } catch (error) {
+      console.error("Profile update error:", error);
       toast.error("Something went wrong.");
     } finally {
       setIsSubmitting(false);
@@ -104,8 +120,12 @@ export default function BuyerProfileSettingsPage() {
 
   if (isPending) {
     return (
-      <div className="w-full min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">
-        Loading profile...
+      <div className="w-full min-h-screen bg-zinc-950 flex flex-col gap-4 p-6">
+        <div className="max-w-2xl mx-auto w-full flex flex-col gap-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 rounded-xl bg-zinc-800/50 animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -145,21 +165,16 @@ export default function BuyerProfileSettingsPage() {
                 <Camera className="size-3.5 text-white" />
               </div>
             </div>
-
             <div className="text-center">
-              <p className="text-base font-bold text-zinc-100">
-                {formData.name}
-              </p>
-              <p className="text-xs text-zinc-500">
-                {user?.email}
-              </p>
+              <p className="text-base font-bold text-zinc-100">{formData.name}</p>
+              <p className="text-xs text-zinc-500">{user?.email}</p>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold border uppercase tracking-wider mt-1 bg-rose-950/30 border-rose-900/50 text-rose-400">
                 Buyer
               </span>
             </div>
           </div>
 
-          {/* ✅ Form now wraps ALL fields */}
+          {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
             {/* Name */}
@@ -191,9 +206,7 @@ export default function BuyerProfileSettingsPage() {
                 disabled
                 className="w-full bg-zinc-900/30 border border-zinc-800/50 text-zinc-500 rounded-xl px-4 py-3 cursor-not-allowed"
               />
-              <p className="text-[11px] text-zinc-600">
-                Email cannot be changed.
-              </p>
+              <p className="text-[11px] text-zinc-600">Email cannot be changed.</p>
             </div>
 
             {/* Phone */}
@@ -233,9 +246,7 @@ export default function BuyerProfileSettingsPage() {
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
                 <Camera className="size-3.5" />
                 Photo URL
-                <span className="text-zinc-600 font-normal normal-case">
-                  (Optional)
-                </span>
+                <span className="text-zinc-600 font-normal normal-case">(Optional)</span>
               </label>
               <input
                 type="url"
@@ -250,23 +261,19 @@ export default function BuyerProfileSettingsPage() {
               </p>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full mt-2 flex items-center justify-center gap-2 py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all active:scale-[0.99] shadow-md shadow-purple-900/20 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <Save className="size-4" />
-              <span>
-                {isSubmitting ? "Saving..." : "Save Changes"}
-              </span>
+              <span>{isSubmitting ? "Saving..." : "Save Changes"}</span>
             </button>
 
           </form>
-          {/* ✅ form closes here, after all fields */}
-
         </div>
       </div>
     </div>
   );
-}                     
+}                    

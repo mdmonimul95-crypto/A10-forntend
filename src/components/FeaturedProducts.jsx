@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { MapPin, Star, ShieldCheck, ArrowUpRight, Tag, Loader2, ImageOff } from "lucide-react";
+import { MapPin, ShieldCheck, ArrowUpRight, Tag, Loader2, ImageOff } from "lucide-react";
 import { Button } from "@heroui/react";
 
 export default function FeaturedProducts() {
@@ -49,7 +49,7 @@ export default function FeaturedProducts() {
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#09090b] border-b border-zinc-900 relative">
             <div className="max-w-7xl mx-auto">
 
-                {/* header */}
+                {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
                     <div>
                         <div className="flex items-center gap-2 text-purple-400 text-sm font-semibold tracking-wider uppercase mb-2">
@@ -61,7 +61,7 @@ export default function FeaturedProducts() {
                     </div>
 
                     <Link
-                        href={"/products"}
+                        href="/products"
                         className="mt-4 md:mt-0 inline-flex items-center gap-1 text-sm font-medium text-zinc-400 hover:text-purple-400 transition-colors group"
                     >
                         View all products
@@ -69,6 +69,7 @@ export default function FeaturedProducts() {
                     </Link>
                 </div>
 
+                {/* Products Grid */}
                 {isLoading ? (
                     <div className="flex items-center justify-center py-20">
                         <Loader2 className="size-6 animate-spin text-purple-400" />
@@ -92,7 +93,7 @@ export default function FeaturedProducts() {
                                 whileHover={{ y: -6 }}
                                 className="group relative flex flex-col justify-between bg-zinc-900/40 border border-zinc-800/80 hover:border-purple-500/40 rounded-2xl overflow-hidden transition-all duration-300 backdrop-blur-sm"
                             >
-                                {/* Product Image */}
+                                {/* Image */}
                                 <div className="relative w-full aspect-[4/3] bg-zinc-800/50 overflow-hidden">
                                     {product.images?.[0] ? (
                                         <img
@@ -109,7 +110,6 @@ export default function FeaturedProducts() {
 
                                 <div className="p-6">
                                     <div>
-
                                         <div className="flex items-center justify-between mb-4">
                                             <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700/50">
                                                 {product.condition}
@@ -121,11 +121,9 @@ export default function FeaturedProducts() {
                                             )}
                                         </div>
 
-
                                         <h3 className="text-lg font-bold text-zinc-100 group-hover:text-purple-400 transition-colors mb-2 line-clamp-1">
                                             {product.title}
                                         </h3>
-
 
                                         <p className="text-xs text-zinc-500 mb-1">
                                             Category: <span className="text-zinc-400 font-medium">{product.category}</span>
@@ -138,26 +136,19 @@ export default function FeaturedProducts() {
                                         )}
                                     </div>
 
-
                                     <div>
-                                        <div className="flex items-center justify-between border-t border-zinc-800/60 pt-4 mb-4 text-xs text-zinc-400">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-lg font-bold text-zinc-100">
-                                                    ৳{Number(product.price).toLocaleString()}
-                                                </span>
-                                            </div>
+                                        <div className="flex items-center justify-between border-t border-zinc-800/60 pt-4 mb-4">
+                                            <span className="text-lg font-bold text-zinc-100">
+                                                ৳{Number(product.price).toLocaleString()}
+                                            </span>
                                         </div>
 
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="text-xs text-zinc-500 truncate">
-                                                by <span className="text-zinc-400 hover:underline cursor-pointer">{product.sellerInfo?.name}</span>
+                                                by <span className="text-zinc-400">{product.sellerInfo?.name}</span>
                                             </span>
-
-
                                             <Link href={`/products/${product._id}`}>
-                                                <Button
-                                                    className="text-xs font-semibold bg-zinc-800 hover:bg-purple-600 hover:text-white text-zinc-200 px-4 py-2 rounded-xl border border-zinc-700/60 hover:border-purple-500/50 transition-all active:scale-95 whitespace-nowrap"
-                                                >
+                                                <Button className="text-xs font-semibold bg-zinc-800 hover:bg-purple-600 hover:text-white text-zinc-200 px-4 py-2 rounded-xl border border-zinc-700/60 hover:border-purple-500/50 transition-all active:scale-95 whitespace-nowrap">
                                                     View Details
                                                 </Button>
                                             </Link>
@@ -168,7 +159,6 @@ export default function FeaturedProducts() {
                         ))}
                     </motion.div>
                 )}
-
             </div>
         </section>
     );
