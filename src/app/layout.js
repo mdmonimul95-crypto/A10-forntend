@@ -29,10 +29,15 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white dark:bg-[#09090b]">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-white dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 transition-colors duration-300"
+      >
         <Providers>
           <Navbar />
-          {children}
+          <main className="flex-1">
+            {children}
+          </main>
           <Toaster position="top-left" richColors />
           <Footer />
         </Providers>
