@@ -312,7 +312,9 @@ export default function BuyerMyOrdersPage() {
                                   >
                                     <XCircle className="size-4" />
                                   </button>
-                                )
+                                ) 
+
+                                
                               )}
                             </div>
                           </td>
