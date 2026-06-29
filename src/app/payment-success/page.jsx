@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { CheckCircle2, ShoppingBag, Home, Receipt, Sun, Moon } from "lucide-react";
+import { CheckCircle2, ShoppingBag, Home, Receipt, Sun, Moon, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -118,5 +118,21 @@ export default function PaymentSuccessPage() {
 
       </div>
     </div>
+  );
+}
+
+function PaymentSuccessFallback() {
+  return (
+    <div className="w-full min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center transition-colors">
+      <Loader2 className="size-6 animate-spin text-purple-500 dark:text-purple-400" />
+    </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<PaymentSuccessFallback />}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
