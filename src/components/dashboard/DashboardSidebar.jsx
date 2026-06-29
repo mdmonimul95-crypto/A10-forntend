@@ -50,9 +50,9 @@ export function DashboardSidebar() {
   ];
 
   const buyerNavLinks = [
-    { icon: LayoutDashboard, href: "/dashboard/buyer/overview", label: "Overview" },
+    { icon: LayoutDashboard, href: "/dashboard/buyer/Overview", label: "Overview" },
     { icon: ShoppingCart, href: "/dashboard/buyer/my-orders", label: "My Orders" },
-    { icon: Heart, href: "/dashboard/buyer/wishlist", label: "Wishlist" },
+    { icon: Heart, href: "/dashboard/buyer/Wishlist", label: "Wishlist" },
     { icon: CreditCard, href: "/dashboard/buyer/payment-history", label: "Payment History" },
     { icon: User, href: "/dashboard/buyer/profile", label: "Profile Settings" },
   ];
