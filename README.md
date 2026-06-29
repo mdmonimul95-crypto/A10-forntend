@@ -1,36 +1,338 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🛒 ReSell Hub
 
-## Getting Started
+A modern full-stack second-hand marketplace platform where users can buy and sell pre-owned products securely. The platform promotes sustainable shopping by reducing waste and making quality products more affordable.
 
-First, run the development server:
+---
+
+## 🌐 Live Website
+
+👉 https://a10-forntend.vercel.app
+
+---
+
+## 📂 Repositories
+
+### Client
+https://github.com/mdmonimul95-crypto/A10-forntend
+
+### Server
+https://github.com/mdmonimul95-crypto/A10-server
+
+---
+
+# 📖 Project Purpose
+
+ReSell Hub is designed to connect buyers and sellers in a secure online marketplace for second-hand products.
+
+The platform allows sellers to list used products while buyers can browse, search, wishlist, order, and securely purchase products through Stripe payment integration.
+
+The goal is to:
+
+- ♻️ Reduce waste
+- 🌱 Encourage sustainable shopping
+- 💰 Help users earn from unused products
+- 🛍️ Make quality products affordable
+
+---
+
+# ✨ Key Features
+
+## Authentication
+
+- Better Auth Authentication
+- Email & Password Login
+- Google Login
+- Secure JWT Authentication
+- Protected Routes
+- Role-Based Authorization
+
+---
+
+## Marketplace Features
+
+- Browse All Products
+- Product Details Page
+- Dynamic Categories
+- Featured Products
+- Wishlist System
+- Advanced Search
+- Advanced Sorting
+- Pagination
+
+---
+
+## Buyer Dashboard
+
+- Dashboard Overview
+- My Orders
+- Wishlist
+- Payment History
+- Profile Management
+
+---
+
+## Seller Dashboard
+
+- Dashboard Statistics
+- Add Product
+- Manage Products
+- Manage Orders
+- Sales Analytics
+- Product CRUD
+
+---
+
+## Admin Dashboard
+
+- Dashboard Analytics
+- Manage Users
+- Manage Products
+- Manage Orders
+- Payment Monitoring
+- Platform Analytics
+
+---
+
+## Payment
+
+- Stripe Payment Gateway
+- Secure Checkout
+- Payment Validation
+- Payment Success Page
+- Transaction History
+
+---
+
+## UI Features
+
+- Responsive Design
+- Skeleton Loading
+- Custom Loader
+- Custom 404 Page
+- Framer Motion Animation
+- Marketplace Statistics
+- Success Stories
+- Sustainability Section
+- Trusted Sellers Section
+
+---
+
+## Optional Features Implemented
+
+- 🌙 Dark / Light Theme
+- ⭐ Seller Verification Badge
+- ❤️ Recently Viewed Products
+- 📊 Product Comparison
+- 🚩 Product Reporting System
+
+---
+
+# 🛠️ Tech Stack
+
+## Frontend
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Shadcn UI
+- Framer Motion
+- React Hook Form
+- Zod
+- Axios
+- TanStack Query
+
+---
+
+## Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- Better Auth
+- JWT
+- Stripe
+- Cloudinary
+
+---
+
+# 📦 NPM Packages Used
+
+## Client
+
+```bash
+next
+react
+typescript
+tailwindcss
+framer-motion
+axios
+react-hook-form
+zod
+@hookform/resolvers
+@tanstack/react-query
+better-auth
+react-icons
+lucide-react
+sonner
+date-fns
+clsx
+class-variance-authority
+```
+
+## Server
+
+```bash
+express
+mongodb
+better-auth
+jsonwebtoken
+cors
+dotenv
+stripe
+multer
+cloudinary
+bcrypt
+cookie-parser
+```
+
+---
+
+# 🔐 Security
+
+- Environment Variables
+- JWT Authentication
+- Protected APIs
+- Protected Routes
+- Secure MongoDB Credentials
+- Better Auth Secret
+- Role-Based Access Control
+
+---
+
+# 📱 Responsive Design
+
+Supports
+
+- Mobile
+- Tablet
+- Laptop
+- Desktop
+
+---
+
+# 📊 User Roles
+
+## Buyer
+
+- Browse Products
+- Wishlist
+- Order Products
+- Stripe Payment
+- Order Tracking
+- Payment History
+
+## Seller
+
+- Add Product
+- Manage Products
+- Manage Orders
+- Sales Analytics
+
+## Admin
+
+- Manage Users
+- Manage Products
+- Manage Orders
+- Monitor Payments
+- Analytics Dashboard
+
+---
+
+# 🎯 Challenges Implemented
+
+- Advanced Search
+- Advanced Sorting
+- Pagination
+- JWT Verification
+- Role-Based Authorization
+
+---
+
+# 🚀 Installation
+
+Clone the repositories
+
+```bash
+git clone https://github.com/mdmonimul95-crypto/A10-forntend.git
+
+git clone https://github.com/mdmonimul95-crypto/A10-server.git
+```
+
+Install dependencies
+
+```bash
+npm install
+```
+
+Run Client
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run Server
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+# 🔑 Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+## Client
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+NEXT_PUBLIC_API_URL=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Server
 
-## Deploy on Vercel
+```env
+PORT=
+MONGODB_URI=
+JWT_SECRET=
+BETTER_AUTH_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+STRIPE_SECRET_KEY=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# 👨‍💻 Author
+
+**Monimul Islam**
+
+Portfolio:
+https://portfolio-website-teal-nine-ze3ou9enjl.vercel.app
+
+LinkedIn:
+https://www.linkedin.com/in/mdmonimul/
+
+GitHub:
+https://github.com/mdmonimul95-crypto
+
+Email:
+mdmonimul95@gmail.com
+
+---
+
+# 📜 License
+
+This project is developed for educational purposes and portfolio showcase.
