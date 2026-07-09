@@ -17,15 +17,15 @@
 
 ### 🏠 Home Page
 
-![Home](./home.png)
+![Home](./public/home.PNG)
 
 ### 🛍️ Products
 
-![Products](./products.png)
+![Products](./public/products.png)
 
 ### 📊 Dashboard
 
-![Dashboard](./dashboard.png)
+![Dashboard](./public/dashboard.png)
 
 ---
 
