@@ -21,11 +21,11 @@
 
 ### 🛍️ Products
 
-![Products](./public/products.png)
+![Products](./public/products.PNG)
 
 ### 📊 Dashboard
 
-![Dashboard](./public/dashboard.png)
+![Dashboard](./public/dashboard.PNG)
 
 ---
 
