@@ -1,67 +1,72 @@
 # 🛒 ReSell Hub
 
-A modern full-stack second-hand marketplace platform where users can buy and sell pre-owned products securely. The platform promotes sustainable shopping by reducing waste and making quality products more affordable.
+> A modern full-stack second-hand marketplace platform where users can securely buy and sell pre-owned products. ReSell Hub promotes sustainable shopping by reducing waste and making quality products more affordable.
+
+## 🌐 Live Demo
+
+🔗 **Live Site:** https://a10-forntend.vercel.app
+
+## 📂 Source Code
+
+- **Frontend:** https://github.com/mdmonimul95-crypto/A10-forntend
+- **Backend:** https://github.com/mdmonimul95-crypto/A10-server
 
 ---
 
-## 🌐 Live Website
+## 📸 Screenshots
 
-👉 https://a10-forntend.vercel.app
+### 🏠 Home Page
+
+![Home](./home.png)
+
+### 🛍️ Products
+
+![Products](./products.png)
+
+### 📊 Dashboard
+
+![Dashboard](./dashboard.png)
 
 ---
 
-## 📂 Repositories
+## 📖 Project Purpose
 
-### Client
-https://github.com/mdmonimul95-crypto/A10-forntend
+ReSell Hub is a full-stack marketplace where users can buy and sell second-hand products securely.
 
-### Server
-https://github.com/mdmonimul95-crypto/A10-server
+The platform enables sellers to list products while buyers can browse, search, wishlist, order, and complete secure payments using Stripe.
 
----
-
-# 📖 Project Purpose
-
-ReSell Hub is designed to connect buyers and sellers in a secure online marketplace for second-hand products.
-
-The platform allows sellers to list used products while buyers can browse, search, wishlist, order, and securely purchase products through Stripe payment integration.
-
-The goal is to:
+### Goals
 
 - ♻️ Reduce waste
-- 🌱 Encourage sustainable shopping
+- 🌱 Promote sustainable shopping
 - 💰 Help users earn from unused products
 - 🛍️ Make quality products affordable
 
 ---
 
-# ✨ Key Features
+# ✨ Features
 
-## Authentication
+### 🔐 Authentication
 
-- Better Auth Authentication
+- Better Auth
 - Email & Password Login
 - Google Login
-- Secure JWT Authentication
+- JWT Authentication
 - Protected Routes
 - Role-Based Authorization
 
----
+### 🛒 Marketplace
 
-## Marketplace Features
-
-- Browse All Products
-- Product Details Page
+- Browse Products
+- Product Details
 - Dynamic Categories
 - Featured Products
-- Wishlist System
+- Wishlist
 - Advanced Search
-- Advanced Sorting
+- Sorting
 - Pagination
 
----
-
-## Buyer Dashboard
+### 👤 Buyer Dashboard
 
 - Dashboard Overview
 - My Orders
@@ -69,61 +74,46 @@ The goal is to:
 - Payment History
 - Profile Management
 
----
-
-## Seller Dashboard
+### 🏪 Seller Dashboard
 
 - Dashboard Statistics
 - Add Product
 - Manage Products
 - Manage Orders
 - Sales Analytics
-- Product CRUD
 
----
-
-## Admin Dashboard
+### 👑 Admin Dashboard
 
 - Dashboard Analytics
 - Manage Users
 - Manage Products
 - Manage Orders
 - Payment Monitoring
-- Platform Analytics
 
----
+### 💳 Payment
 
-## Payment
-
-- Stripe Payment Gateway
-- Secure Checkout
+- Stripe Checkout
 - Payment Validation
 - Payment Success Page
 - Transaction History
 
----
-
-## UI Features
+### 🎨 UI
 
 - Responsive Design
-- Skeleton Loading
-- Custom Loader
-- Custom 404 Page
-- Framer Motion Animation
+- Skeleton Loader
+- Framer Motion
+- Custom 404
 - Marketplace Statistics
 - Success Stories
 - Sustainability Section
-- Trusted Sellers Section
 
----
+### ⭐ Extra Features
 
-## Optional Features Implemented
-
-- 🌙 Dark / Light Theme
-- ⭐ Seller Verification Badge
-- ❤️ Recently Viewed Products
-- 📊 Product Comparison
-- 🚩 Product Reporting System
+- Dark / Light Theme
+- Seller Verification Badge
+- Recently Viewed Products
+- Product Comparison
+- Product Reporting System
 
 ---
 
@@ -136,13 +126,11 @@ The goal is to:
 - TypeScript
 - Tailwind CSS
 - Shadcn UI
-- Framer Motion
+- TanStack Query
 - React Hook Form
 - Zod
 - Axios
-- TanStack Query
-
----
+- Framer Motion
 
 ## Backend
 
@@ -156,134 +144,51 @@ The goal is to:
 
 ---
 
-# 📦 NPM Packages Used
+# 🔒 Security
 
-## Client
-
-```bash
-next
-react
-typescript
-tailwindcss
-framer-motion
-axios
-react-hook-form
-zod
-@hookform/resolvers
-@tanstack/react-query
-better-auth
-react-icons
-lucide-react
-sonner
-date-fns
-clsx
-class-variance-authority
-```
-
-## Server
-
-```bash
-express
-mongodb
-better-auth
-jsonwebtoken
-cors
-dotenv
-stripe
-multer
-cloudinary
-bcrypt
-cookie-parser
-```
-
----
-
-# 🔐 Security
-
-- Environment Variables
 - JWT Authentication
+- Better Auth
 - Protected APIs
 - Protected Routes
-- Secure MongoDB Credentials
-- Better Auth Secret
 - Role-Based Access Control
+- Environment Variables
 
 ---
 
 # 📱 Responsive Design
 
-Supports
+✅ Mobile
 
-- Mobile
-- Tablet
-- Laptop
-- Desktop
+✅ Tablet
 
----
+✅ Laptop
 
-# 📊 User Roles
-
-## Buyer
-
-- Browse Products
-- Wishlist
-- Order Products
-- Stripe Payment
-- Order Tracking
-- Payment History
-
-## Seller
-
-- Add Product
-- Manage Products
-- Manage Orders
-- Sales Analytics
-
-## Admin
-
-- Manage Users
-- Manage Products
-- Manage Orders
-- Monitor Payments
-- Analytics Dashboard
-
----
-
-# 🎯 Challenges Implemented
-
-- Advanced Search
-- Advanced Sorting
-- Pagination
-- JWT Verification
-- Role-Based Authorization
+✅ Desktop
 
 ---
 
 # 🚀 Installation
 
-Clone the repositories
+## Clone
 
 ```bash
 git clone https://github.com/mdmonimul95-crypto/A10-forntend.git
-
 git clone https://github.com/mdmonimul95-crypto/A10-server.git
 ```
 
-Install dependencies
+## Frontend
 
 ```bash
+cd A10-forntend
 npm install
-```
-
-Run Client
-
-```bash
 npm run dev
 ```
 
-Run Server
+## Backend
 
 ```bash
+cd A10-server
+npm install
 npm run dev
 ```
 
@@ -291,14 +196,14 @@ npm run dev
 
 # 🔑 Environment Variables
 
-## Client
+### Frontend
 
 ```env
 NEXT_PUBLIC_API_URL=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
-## Server
+### Backend
 
 ```env
 PORT=
@@ -315,21 +220,33 @@ CLOUDINARY_API_SECRET=
 
 ---
 
+# 🚀 Future Improvements
+
+- Product Reviews
+- Real-time Chat
+- Email Notifications
+- AI Product Recommendation
+- Inventory Alerts
+
+---
+
+# 🌍 Deployment
+
+- Frontend: Vercel
+- Backend: Vercel
+- Database: MongoDB Atlas
+- Image Storage: Cloudinary
+
+---
+
 # 👨‍💻 Author
 
-**Monimul Islam**
+**MD. Monimul Islam**
 
-Portfolio:
-https://portfolio-website-teal-nine-ze3ou9enjl.vercel.app
-
-LinkedIn:
-https://www.linkedin.com/in/mdmonimul/
-
-GitHub:
-https://github.com/mdmonimul95-crypto
-
-Email:
-mdmonimul95@gmail.com
+- Portfolio: https://portfolio-website-teal-nine-ze3ou9enjl.vercel.app
+- LinkedIn: https://www.linkedin.com/in/mdmonimul/
+- GitHub: https://github.com/mdmonimul95-crypto
+- Email: mdmonimul95@gmail.com
 
 ---
 
